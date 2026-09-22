@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>表現当てゲーム</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;background:#f4f4f5;color:#222}
+main{max-width:680px;margin:auto;padding:16px}.card{background:#fff;border-radius:18px;padding:20px;margin:12px 0;box-shadow:0 2px 12px #0001}
+h1,h2{margin:0 0 12px}.muted{color:#777;font-size:14px}.big{font-size:32px;font-weight:800;text-align:center;line-height:1.4;margin:22px 0}
+button,input{font:inherit}button{min-height:46px;border:0;border-radius:12px;padding:10px 15px;font-weight:700}.primary{background:#222;color:#fff;width:100%}.secondary{background:#eee}.danger{background:#f3dddd;color:#a00}
+input{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px}.row{display:flex;gap:8px}.row>*{min-width:0}.row input{flex:1}
+.hidden{display:none!important}.choice{width:100%;text-align:left;background:#f1f1f1;margin:5px 0}.choice.selected{outline:3px solid #555}.list{padding:9px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;gap:8px}
+.badge{display:inline-block;background:#eee;border-radius:99px;padding:5px 9px;font-size:12px}.center{text-align:center}
+</style>
+</head>
+<body><main>
+<div class="card"><h1>🎭 表現当てゲーム</h1><p class="muted">Aがセリフを指定された表現で演じ、Bが「どんな表現だったか」を当てます。</p></div>
+
+<section id="home">
+<div class="card"><h2>ゲームを作る</h2><input id="hostName" placeholder="あなたの名前">
+<button id="create" class="primary" style="margin-top:10px">ルームを作成</button>
+</div>
+<div class="card"><h2>ゲームに参加</h2><input id="roomInput" placeholder="4桁の参加コード">
+<input id="joinName" placeholder="名前" style="margin-top:8px">
+<button id="join" class="primary" style="margin-top:10px">参加する</button></div>
+<div class="card"><button id="editorOpen" class="secondary" style="width:100%">セリフ・表現を編集</button></div>
+</section>
+
+<section id="room" class="hidden">
+<div class="card center"><span class="badge">参加コード</span><div class="big" id="roomCode"></div><p id="players"></p></div>
+<div class="card" id="hostControls"><button id="startRound" class="primary">次のお題を開始</button></div>
+<div class="card"><h2 id="roleTitle"></h2><div id="roomMessage" class="muted"></div></div>
+<div class="card hidden" id="promptCard"><span class="badge">Aだけ見る</span><div class="big">「<span id="line"></span>」を<br>「<span id="expr"></span>」で表現！</div><button id="performed" class="primary">表現した！</button></div>
+<div class="card hidden" id="answerCard"><h2>Bの回答</h2><p class="muted">Aはどんな表現をしていましたか？</p><div id="choices"></div><button id="sendAnswer" class="primary" disabled>回答する</button></div>
+<div class="card hidden" id="resultCard"><h2>結果</h2><div id="result" class="center"></div><button id="backHome" class="secondary" style="width:100%;margin-top:12px">ホームへ</button></div>
+</section>
+
+<section id="editor" class="hidden">
+<div class="card"><h2>セリフ</h2><div class="row"><input id="newLine" placeholder="例：好き"><button id="addLine">追加</button></div><div id="lineList"></div></div>
+<div class="card"><h2>表現</h2><div class="row"><input id="newExpr" placeholder="例：照れて"><button id="addExpr">追加</button></div><div id="exprList"></div></div>
+<div class="card"><button id="editorBack" class="secondary" style="width:100%">戻る</button></div>
+</section>
+</main>
+
+<script type="module">
+/* Firebaseの設定をここに貼ります。下のREADMEに手順があります。 */
+const firebaseConfig = {
+  apiKey: "AIzaSyBL-GvVZv7trLemQ5yqH5DumobwFyx-Yu8",
+  authDomain: "expression-guess-game.firebaseapp.com",
+  databaseURL: "https://expression-guess-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "expression-guess-game",
+  storageBucket: "expression-guess-game.firebasestorage.app",
+  messagingSenderId: "501092396776",
+  appId: "1:501092396776:web:009ae7698b57583956a35d",
+  measurementId: "G-HB1VVYDQRD"
+};
+
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {getDatabase,ref,set,onValue,update,onDisconnect} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import {getAuth,signInAnonymously} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+const $=id=>document.getElementById(id);
+const defaultLines=["好き","ありがとう","ごめん","お腹すいた","帰りたい","眠い","助けて","本当？"];
+const defaultExpr=["照れて","怒って","悲しそうに","嬉しそうに","カッコつけて","恥ずかしそうに","疑って","泣きそうに"];
+let lines=JSON.parse(localStorage.getItem("lines")||"null")||defaultLines;
+let exprs=JSON.parse(localStorage.getItem("exprs")||"null")||defaultExpr;
+let db,user,roomId,name,role,answer="",round=0,unsub;
+
+function show(id){["home","room","editor"].forEach(x=>$(x).classList.add("hidden"));$(id).classList.remove("hidden")}
+function code(){return Math.floor(1000+Math.random()*9000).toString()}
+function shuffle(a){return a.slice().sort(()=>Math.random()-.5)}
+function renderEditor(){
+ $("lineList").innerHTML=lines.map((x,i)=>`<div class="list"><span>${x}</span><button class="danger" onclick="delLine(${i})">削除</button></div>`).join("");
+ $("exprList").innerHTML=exprs.map((x,i)=>`<div class="list"><span>${x}</span><button class="danger" onclick="delExpr(${i})">削除</button></div>`).join("");
+}
+window.delLine=i=>{if(lines.length>1){lines.splice(i,1);localStorage.lines=JSON.stringify(lines);renderEditor()}}
+window.delExpr=i=>{if(exprs.length>1){exprs.splice(i,1);localStorage.exprs=JSON.stringify(exprs);renderEditor()}}
+$("editorOpen").onclick=()=>{renderEditor();show("editor")}
+$("editorBack").onclick=()=>show("home")
+$("addLine").onclick=()=>{let v=$("newLine").value.trim();if(v){lines.push(v);localStorage.lines=JSON.stringify(lines);$("newLine").value="";renderEditor()}}
+$("addExpr").onclick=()=>{let v=$("newExpr").value.trim();if(v){exprs.push(v);localStorage.exprs=JSON.stringify(exprs);$("newExpr").value="";renderEditor()}}
+
+async function init(){
+ if(firebaseConfig.apiKey.startsWith("YOUR_")) return alert("Firebase設定が未入力です。READMEの手順で設定してください。");
+ const app=initializeApp(firebaseConfig);db=getDatabase(app);const auth=getAuth(app);await signInAnonymously(auth);user=auth.currentUser;
+}
+async function enter(id,n,r){
+ await init();roomId=id;name=n;role=r;
+ const playerRef=ref(db,`rooms/${id}/players/${user.uid}`);
+ await set(playerRef,{name:n,role:r,online:true});
+ onDisconnect(playerRef).update({online:false});
+ $("roomCode").textContent=id;$("roleTitle").textContent=r==="A"?"あなたはA（演じる人）":"あなたはB（回答者）";
+ if(r!=="A")$("hostControls").classList.add("hidden");
+ show("room");
+ unsub?.();unsub=onValue(ref(db,`rooms/${id}`),snap=>sync(snap.val()||{}));
+}
+function sync(data){
+ const ps=Object.values(data.players||{}).filter(p=>p.online);
+ $("players").textContent="参加者："+ps.map(p=>p.name).join("、");
+ const rd=data.roundData||{};round=rd.id||0;
+ if(!round){$("roomMessage").textContent=role==="A"?"「次のお題を開始」を押してください。":"Aがお題を開始するのを待っています。";return}
+ $("roomMessage").textContent=rd.performed?(role==="A"?"Bが回答するのを待っています。":"Aの表現を見て回答してください。"):"Aがお題を確認中です。";
+ if(role==="A"){ $("promptCard").classList.remove("hidden");$("line").textContent=rd.line;$("expr").textContent=rd.expr; }
+ if(role!=="A"&&rd.performed&&!rd.finished){makeChoices(rd.expr);$("answerCard").classList.remove("hidden")}
+ if(role==="A" && rd.performed && !rd.finished){
+   const bCount=Object.values(data.players||{}).filter(p=>p.online&&p.role==="B").length;
+   const aCount=Object.keys(data.answers||{}).length;
+   if(bCount>0 && aCount>=bCount) update(ref(db,`rooms/${roomId}/roundData`),{finished:true});
+ }
+ if(rd.finished){$("promptCard").classList.add("hidden");$("answerCard").classList.add("hidden");$("resultCard").classList.remove("hidden");renderResults(data)}
+}
+function makeChoices(correct){
+ if($("choices").dataset.round==round)return;
+ $("choices").dataset.round=round;answer="";$("sendAnswer").disabled=true;$("choices").innerHTML="";
+ shuffle([correct,...shuffle(exprs.filter(x=>x!==correct)).slice(0,3)]).forEach(x=>{let b=document.createElement("button");b.className="choice";b.textContent=x;b.onclick=()=>{document.querySelectorAll(".choice").forEach(q=>q.classList.remove("selected"));b.classList.add("selected");answer=x;$("sendAnswer").disabled=false};$("choices").appendChild(b)});
+}
+function renderResults(data){
+ const rd=data.roundData||{};let arr=Object.entries(data.answers||{}).map(([id,v])=>{let p=data.players?.[id];return p?`${p.name}：${v.answer}${v.answer===rd.expr?" ✅":" ❌"}`:""}).filter(Boolean);
+ $("result").innerHTML=`<div class="big">正解：${rd.expr}</div><p>${arr.join("<br>")||"回答なし"}</p>`;
+}
+$("create").onclick=async()=>{let n=$("hostName").value.trim()||"A";let id=code();await init();await set(ref(db,`rooms/${id}`),{created:Date.now(),roundData:{id:0}});await enter(id,n,"A")}
+$("join").onclick=async()=>{let id=$("roomInput").value.trim(),n=$("joinName").value.trim()||"B";if(!/^\d{4}$/.test(id))return alert("4桁の参加コードを入力してください");await enter(id,n,"B")}
+$("startRound").onclick=async()=>{let line=lines[Math.floor(Math.random()*lines.length)],expr=exprs[Math.floor(Math.random()*exprs.length)],id=Date.now();await update(ref(db,`rooms/${roomId}`),{roundData:{id,line,expr,performed:false,finished:false},answers:{}})}
+$("performed").onclick=async()=>update(ref(db,`rooms/${roomId}/roundData`),{performed:true})
+$("sendAnswer").onclick=async()=>{await set(ref(db,`rooms/${roomId}/answers/${user.uid}`),{answer});$("answerCard").classList.add("hidden");const snap=await import("https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js").then(m=>m.get(ref(db,`rooms/${roomId}/answers`)));if(role==="B"){}}
+$("backHome").onclick=()=>location.reload();
+init();
+</script>
+</body></html>
