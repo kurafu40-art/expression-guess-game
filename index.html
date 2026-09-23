@@ -174,7 +174,17 @@ input{
 </div>
 
 
-<div class="card" id="hostControls">
+<!--
+  次のお題を開始するボタン
+
+  ゲーム開始前：
+  ゲーム作成者が表示
+
+  ゲーム開始後：
+  そのラウンドの表現者だけが表示
+-->
+
+<div class="card hidden" id="hostControls">
 
   <button id="startRound" class="primary">
     次のお題を開始
@@ -569,6 +579,11 @@ let user;
 let roomId;
 let name;
 
+/*
+  自分がゲーム作成者かどうか
+*/
+let isHost = false;
+
 let round = 0;
 
 let answer = "";
@@ -889,7 +904,7 @@ function getPlayers(data){
 async function enter(
   id,
   n,
-  isHost
+  host
 ){
 
   await init();
@@ -898,6 +913,11 @@ async function enter(
   roomId = id;
 
   name = n;
+
+  /*
+    ゲーム作成者かどうかを保存
+  */
+  isHost = host;
 
 
   const playerRef =
@@ -935,10 +955,16 @@ async function enter(
     .textContent = id;
 
 
+  /*
+    初期状態では
+    ゲーム作成者だけが
+    「次のお題を開始」を表示
+  */
+
   $("hostControls")
     .classList.toggle(
       "hidden",
-      !isHost
+      !host
     );
 
 
@@ -1026,7 +1052,19 @@ function sync(data){
 
     $("roomMessage")
       .textContent =
-        "ホストが「次のお題を開始」を押してください。";
+        "ゲーム作成者が「次のお題を開始」を押してください。";
+
+
+    /*
+      ゲーム開始前は
+      ゲーム作成者だけ表示
+    */
+
+    $("hostControls")
+      .classList.toggle(
+        "hidden",
+        !isHost
+      );
 
 
     return;
@@ -1043,8 +1081,24 @@ function sync(data){
 
 
   /*
+    重要：
+    ゲーム開始後は
+    「次のお題を開始」を
+    現在の表現者だけに表示する。
+
+    表現者以外には非表示。
+  */
+
+  $("hostControls")
+    .classList.toggle(
+      "hidden",
+      !isA
+    );
+
+
+  /*
     新しいラウンドになったら
-    ロックを解除
+    回答ロックを解除
   */
 
   if(
@@ -1052,16 +1106,6 @@ function sync(data){
   ){
 
     answerSubmittedRound = null;
-
-  }
-
-
-  if(
-    performedLocked &&
-    rd.id !== round
-  ){
-
-    performedLocked = false;
 
   }
 
@@ -1112,6 +1156,12 @@ function sync(data){
         .textContent =
           "表現済み";
 
+
+      /*
+        表現済みの場合、
+        次のお題ボタンは
+        全員回答後に使う。
+      */
 
       $("roomMessage")
         .textContent =
@@ -1241,6 +1291,11 @@ function sync(data){
 
   /*
     全員回答済みか確認
+
+    表現者自身が
+    次のお題を開始するため、
+    表現者の画面でだけ
+    finishedを判定する。
   */
 
   if(
@@ -1309,6 +1364,24 @@ function sync(data){
 
 
     renderResults(data);
+
+
+    /*
+      ラウンド終了後は
+      現在の表現者だけが
+      「次のお題を開始」できる。
+
+      つまり、
+      ゲーム作成者であっても
+      表現者でなければ
+      ボタンは表示されない。
+    */
+
+    $("hostControls")
+      .classList.toggle(
+        "hidden",
+        !isA
+      );
 
   }
 
@@ -1405,13 +1478,6 @@ function makeChoices(
 
 
     b.onclick = () => {
-
-      /*
-        ここが今回の重要修正。
-
-        「回答する」ボタンがdisabledでも、
-        選択肢は普通に押せるようにする。
-      */
 
       if(
         answerSubmittedRound === roundId
@@ -1885,10 +1951,76 @@ async () => {
     }
 
 
+    const currentRoundData =
+      data.roundData || {};
+
+
+    const currentRoundId =
+      currentRoundData.id || 0;
+
+
+    /*
+      権限チェック
+
+      まだゲームが始まっていない場合：
+      ゲーム作成者だけ開始可能。
+
+      すでにラウンドがある場合：
+      そのラウンドの表現者だけが
+      次のお題を開始可能。
+
+      さらに、前ラウンドが
+      終了していることも確認。
+    */
+
+    if(!currentRoundId){
+
+      if(
+        data.hostUid !== user.uid
+      ){
+
+        alert(
+          "ゲーム作成者だけが最初のお題を開始できます。"
+        );
+
+        return;
+
+      }
+
+    }else{
+
+      if(
+        currentRoundData.aUid !== user.uid
+      ){
+
+        alert(
+          "次のお題を開始できるのは、そのラウンドの表現者だけです。"
+        );
+
+        return;
+
+      }
+
+
+      if(
+        !currentRoundData.finished
+      ){
+
+        alert(
+          "全員の回答が終わってから次のお題を開始してください。"
+        );
+
+        return;
+
+      }
+
+    }
+
+
     const nextRound =
       (
-        data.roundData
-          ?.roundNumber || 0
+        currentRoundData
+          .roundNumber || 0
       ) + 1;
 
 
