@@ -2,18 +2,12 @@
 <html lang="ja">
 
 <head>
-
 <meta charset="utf-8">
-
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1"
->
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <title>表現当てゲーム</title>
 
 <style>
-
 *{
   box-sizing:border-box;
 }
@@ -72,6 +66,7 @@ button{
   border-radius:12px;
   padding:10px 15px;
   font-weight:700;
+  cursor:pointer;
 }
 
 button:disabled{
@@ -187,9 +182,7 @@ input{
   padding:12px 0;
   border-bottom:1px solid #eee;
 }
-
 </style>
-
 </head>
 
 
@@ -197,29 +190,24 @@ input{
 
 <main>
 
-
-<!-- ==================================================
+<!-- ==========================================
      HOME
-================================================== -->
+========================================== -->
 
 <section id="home">
 
 <div class="card">
 
-<h1>
-🎭 表現当てゲーム
-</h1>
+<h1>🎭 表現当てゲーム</h1>
 
 <p class="muted">
-
-1人(表現者)がセリフを指定された表現で演じ、
+1人（表現者）がセリフを指定された表現で演じ、
 その人以外の全員が「どんな表現だったか」を当てます。
-
+<br><br>
 表現者はラウンドごとに順番に交代します。
-
+<br><br>
 正答者にはポイントを付与し、
 回答までの時間が短ければさらにボーナスが付きます。
-
 </p>
 
 </div>
@@ -227,9 +215,7 @@ input{
 
 <div class="card">
 
-<h2>
-ゲームを作る
-</h2>
+<h2>ゲームを作る</h2>
 
 <input
   id="hostName"
@@ -249,13 +235,13 @@ input{
 
 <div class="card">
 
-<h2>
-ゲームに参加
-</h2>
+<h2>ゲームに参加</h2>
 
 <input
   id="roomInput"
   placeholder="4桁の参加コード"
+  inputmode="numeric"
+  maxlength="4"
 >
 
 <input
@@ -290,15 +276,14 @@ input{
 </section>
 
 
-<!-- ==================================================
+<!-- ==========================================
      ROOM
-================================================== -->
+========================================== -->
 
 <section
   id="room"
   class="hidden"
 >
-
 
 <div class="card center">
 
@@ -359,9 +344,9 @@ input{
 </div>
 
 
-<!-- ==================================================
+<!-- ==========================================
      A
-================================================== -->
+========================================== -->
 
 <div
   class="card hidden"
@@ -380,6 +365,7 @@ Aだけ見る
 
 </div>
 
+
 <button
   id="performed"
   class="primary"
@@ -393,24 +379,22 @@ Aだけ見る
   class="danger"
   style="width:100%;margin-top:8px"
 >
-このお題をスキップ
+Aをスキップ
 </button>
 
 </div>
 
 
-<!-- ==================================================
+<!-- ==========================================
      B
-================================================== -->
+========================================== -->
 
 <div
   class="card hidden"
   id="answerCard"
 >
 
-<h2>
-回答
-</h2>
+<h2>回答</h2>
 
 <p class="muted">
 Aはどんな表現をしていましたか？
@@ -436,42 +420,36 @@ Aはどんな表現をしていましたか？
 </div>
 
 
-<!-- ==================================================
-     結果
-================================================== -->
+<!-- ==========================================
+     RESULT
+========================================== -->
 
 <div
   class="card hidden"
   id="resultCard"
 >
 
-<h2>
-結果
-</h2>
+<h2>結果</h2>
 
 <div id="result"></div>
 
 </div>
 
-
 </section>
 
 
-<!-- ==================================================
+<!-- ==========================================
      EDITOR
-================================================== -->
+========================================== -->
 
 <section
   id="editor"
   class="hidden"
 >
 
-
 <div class="card">
 
-<h2>
-セリフ
-</h2>
+<h2>セリフ</h2>
 
 <div class="row">
 
@@ -493,9 +471,7 @@ Aはどんな表現をしていましたか？
 
 <div class="card">
 
-<h2>
-表現
-</h2>
+<h2>表現</h2>
 
 <div class="row">
 
@@ -529,21 +505,19 @@ Aはどんな表現をしていましたか？
 
 </section>
 
-
 </main>
 
 
 <script type="module">
 
-
-/* ==================================================
-   Firebase設定
-================================================== */
+/* ==========================================
+   Firebase
+========================================== */
 
 const firebaseConfig = {
 
   apiKey:
-    "AIzaSyBL-GvVZv7trqH5DumobwFyx-Yu8",
+    "AIzaSyBL-GvVZv7trLemQ5yqH5DumobwFyx-Yu8",
 
   authDomain:
     "expression-guess-game.firebaseapp.com",
@@ -565,7 +539,6 @@ const firebaseConfig = {
 
   measurementId:
     "G-HB1VVYDQRD"
-
 };
 
 
@@ -577,7 +550,6 @@ from
 
 
 import {
-
   getDatabase,
   ref,
   set,
@@ -586,33 +558,26 @@ import {
   onDisconnect,
   runTransaction,
   get
-
 }
 from
 "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 
 import {
-
   getAuth,
   signInAnonymously
-
 }
 from
 "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
-/* ==================================================
-   共通
-================================================== */
-
 const $ = id =>
   document.getElementById(id);
 
 
-/* ==================================================
+/* ==========================================
    セリフ
-================================================== */
+========================================== */
 
 const defaultLines = [
 
@@ -720,9 +685,9 @@ const defaultLines = [
 ];
 
 
-/* ==================================================
+/* ==========================================
    表現
-================================================== */
+========================================== */
 
 const defaultExpr = [
 
@@ -831,69 +796,39 @@ const defaultExpr = [
 ];
 
 
-/* ==================================================
-   以前の表現から新しい表現への移行
-================================================== */
+/* ==========================================
+   旧表現置換
+========================================== */
 
 const expressionReplacements = {
 
-  "悲しそうに":
-    "ふてくされて",
-
-  "嬉しそうに":
-    "舞い上がって",
-
-  "恥ずかしそうに":
-    "よそよそしく",
-
-  "泣きそうに":
-    "声を震わせて",
-
-  "焦って":
-    "せかすように",
-
-  "得意げに":
-    "鼻で笑うように",
-
-  "怖がって":
-    "身構えて",
-
-  "自信満々に":
-    "皮肉っぽく",
-
-  "自信なさそうに":
-    "おどおどして",
-
-  "必死に":
-    "投げやりに",
-
-  "真顔で":
-    "遠い目をして",
-
-  "お願いするように":
-    "ぶっきらぼうに",
-
-  "必死にお願いするように":
-    "恐縮したように",
-
-  "疑い深く":
-    "警戒するように",
-
-  "つまらなそうに":
-    "無関心そうに"
+  "悲しそうに":"ふてくされて",
+  "嬉しそうに":"舞い上がって",
+  "恥ずかしそうに":"よそよそしく",
+  "泣きそうに":"声を震わせて",
+  "焦って":"せかすように",
+  "得意げに":"鼻で笑うように",
+  "怖がって":"身構えて",
+  "自信満々に":"皮肉っぽく",
+  "自信なさそうに":"おどおどして",
+  "必死に":"投げやりに",
+  "真顔で":"遠い目をして",
+  "お願いするように":"ぶっきらぼうに",
+  "必死にお願いするように":"恐縮したように",
+  "疑い深く":"警戒するように",
+  "つまらなそうに":"無関心そうに"
 
 };
 
 
-/* ==================================================
+/* ==========================================
    LocalStorage
-================================================== */
+========================================== */
 
 let savedLines =
   JSON.parse(
     localStorage.getItem("lines") || "null"
   );
-
 
 let savedExprs =
   JSON.parse(
@@ -901,39 +836,38 @@ let savedExprs =
   );
 
 
-if(
-  Array.isArray(savedExprs)
-){
+if(Array.isArray(savedExprs)){
 
   savedExprs =
     savedExprs.map(
       expression =>
-        expressionReplacements[
-          expression
-        ] || expression
+        expressionReplacements[expression] ||
+        expression
     );
 
 }
 
 
-let lines = savedLines
-  ? [
-      ...new Set([
-        ...savedLines,
-        ...defaultLines
-      ])
-    ]
-  : [...defaultLines];
+let lines =
+  savedLines
+    ? [
+        ...new Set([
+          ...savedLines,
+          ...defaultLines
+        ])
+      ]
+    : [...defaultLines];
 
 
-let exprs = savedExprs
-  ? [
-      ...new Set([
-        ...savedExprs,
-        ...defaultExpr
-      ])
-    ]
-  : [...defaultExpr];
+let exprs =
+  savedExprs
+    ? [
+        ...new Set([
+          ...savedExprs,
+          ...defaultExpr
+        ])
+      ]
+    : [...defaultExpr];
 
 
 localStorage.setItem(
@@ -941,51 +875,40 @@ localStorage.setItem(
   JSON.stringify(lines)
 );
 
-
 localStorage.setItem(
   "exprs",
   JSON.stringify(exprs)
 );
 
 
-/* ==================================================
-   ゲーム変数
-================================================== */
+/* ==========================================
+   状態
+========================================== */
 
 let app = null;
-
 let db = null;
-
 let auth = null;
-
 let user = null;
 
 let roomId = null;
-
 let name = "";
-
 let isHost = false;
 
 let round = 0;
-
 let answer = "";
 
 let unsub = null;
-
 let timerInterval = null;
 
 let currentAnswerRound = null;
-
 let performedLocked = false;
-
 let answerSubmittedRound = null;
-
 let settlingRoundId = null;
 
 
-/* ==================================================
+/* ==========================================
    Firebase初期化
-================================================== */
+========================================== */
 
 async function init(){
 
@@ -1007,9 +930,7 @@ async function init(){
 
   if(!user){
 
-    if(
-      auth.currentUser
-    ){
+    if(auth.currentUser){
 
       user =
         auth.currentUser;
@@ -1030,9 +951,9 @@ async function init(){
 }
 
 
-/* ==================================================
-   画面切り替え
-================================================== */
+/* ==========================================
+   画面
+========================================== */
 
 function show(id){
 
@@ -1040,8 +961,7 @@ function show(id){
     "home",
     "room",
     "editor"
-  ]
-  .forEach(x => {
+  ].forEach(x => {
 
     $(x)
       .classList
@@ -1057,9 +977,9 @@ function show(id){
 }
 
 
-/* ==================================================
-   ルームコード
-================================================== */
+/* ==========================================
+   コード生成
+========================================== */
 
 function code(){
 
@@ -1073,25 +993,65 @@ function code(){
 }
 
 
-/* ==================================================
+/* ==========================================
    シャッフル
-================================================== */
+========================================== */
 
 function shuffle(array){
 
-  return array
-    .slice()
-    .sort(
-      () =>
-        Math.random() - 0.5
-    );
+  const copy =
+    array.slice();
+
+
+  for(
+    let i =
+      copy.length - 1;
+    i > 0;
+    i--
+  ){
+
+    const j =
+      Math.floor(
+        Math.random() *
+        (i + 1)
+      );
+
+
+    [
+      copy[i],
+      copy[j]
+    ] = [
+      copy[j],
+      copy[i]
+    ];
+
+  }
+
+
+  return copy;
 
 }
 
 
-/* ==================================================
+/* ==========================================
+   HTMLエスケープ
+========================================== */
+
+function escapeHtml(value){
+
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+
+}
+
+
+/* ==========================================
    エディタ
-================================================== */
+========================================== */
 
 function renderEditor(){
 
@@ -1103,7 +1063,7 @@ function renderEditor(){
         <div class="list">
 
           <span>
-            ${x}
+            ${escapeHtml(x)}
           </span>
 
           <button
@@ -1127,7 +1087,7 @@ function renderEditor(){
         <div class="list">
 
           <span>
-            ${x}
+            ${escapeHtml(x)}
           </span>
 
           <button
@@ -1148,9 +1108,7 @@ function renderEditor(){
 window.delLine = i => {
 
   if(lines.length <= 1){
-
     return;
-
   }
 
   lines.splice(i,1);
@@ -1168,9 +1126,7 @@ window.delLine = i => {
 window.delExpr = i => {
 
   if(exprs.length <= 1){
-
     return;
-
   }
 
   exprs.splice(i,1);
@@ -1188,7 +1144,6 @@ window.delExpr = i => {
 $("editorOpen").onclick = () => {
 
   renderEditor();
-
   show("editor");
 
 };
@@ -1210,13 +1165,13 @@ $("addLine").onclick = () => {
 
 
   if(!value){
-
     return;
-
   }
 
 
-  lines.push(value);
+  if(!lines.includes(value)){
+    lines.push(value);
+  }
 
 
   localStorage.setItem(
@@ -1227,15 +1182,10 @@ $("addLine").onclick = () => {
 
   $("newLine").value = "";
 
-
   renderEditor();
 
 };
 
-
-/* ==================================================
-   表現追加
-================================================== */
 
 $("addExpr").onclick = () => {
 
@@ -1246,18 +1196,12 @@ $("addExpr").onclick = () => {
 
 
   if(!value){
-
     return;
-
   }
 
 
-  if(
-    !exprs.includes(value)
-  ){
-
+  if(!exprs.includes(value)){
     exprs.push(value);
-
   }
 
 
@@ -1269,15 +1213,14 @@ $("addExpr").onclick = () => {
 
   $("newExpr").value = "";
 
-
   renderEditor();
 
 };
 
 
-/* ==================================================
-   プレイヤー取得
-================================================== */
+/* ==========================================
+   プレイヤー
+========================================== */
 
 function getPlayers(data){
 
@@ -1293,16 +1236,56 @@ function getPlayers(data){
 
   .sort(
     (a,b) =>
-      (a[1].joinedAt || 0) -
-      (b[1].joinedAt || 0)
+      Number(
+        a[1].joinedAt || 0
+      ) -
+      Number(
+        b[1].joinedAt || 0
+      )
   );
 
 }
 
 
-/* ==================================================
-   ラウンド進行中に表示する得点
-================================================== */
+/* ==========================================
+   次のA
+========================================== */
+
+function getNextAUid(
+  players,
+  currentAUid
+){
+
+  if(!players.length){
+    return null;
+  }
+
+
+  const currentIndex =
+    players.findIndex(
+      ([id]) =>
+        id === currentAUid
+    );
+
+
+  if(currentIndex < 0){
+    return players[0][0];
+  }
+
+
+  return players[
+    (
+      currentIndex + 1
+    ) %
+    players.length
+  ][0];
+
+}
+
+
+/* ==========================================
+   表示用得点
+========================================== */
 
 function getDisplayScore(
   player,
@@ -1351,9 +1334,9 @@ function getDisplayScore(
 }
 
 
-/* ==================================================
-   ルーム参加
-================================================== */
+/* ==========================================
+   入室
+========================================== */
 
 async function enter(
   id,
@@ -1386,10 +1369,13 @@ async function enter(
 
 
   roomId = id;
-
   name = n;
-
   isHost = host;
+
+
+  const existingPlayer =
+    roomSnapshot.val()
+      ?.players?.[user.uid];
 
 
   const playerRef =
@@ -1397,11 +1383,6 @@ async function enter(
       db,
       `rooms/${id}/players/${user.uid}`
     );
-
-
-  const existingPlayer =
-    roomSnapshot.val()
-      ?.players?.[user.uid];
 
 
   await set(
@@ -1417,8 +1398,9 @@ async function enter(
         Date.now(),
 
       score:
-        existingPlayer?.score ||
-        0,
+        Number(
+          existingPlayer?.score || 0
+        ),
 
       scoreRounds:
         existingPlayer?.scoreRounds ||
@@ -1443,7 +1425,9 @@ async function enter(
   show("room");
 
 
-  unsub?.();
+  if(unsub){
+    unsub();
+  }
 
 
   unsub =
@@ -1464,9 +1448,9 @@ async function enter(
 }
 
 
-/* ==================================================
-   得点をラウンド終了時に加算
-================================================== */
+/* ==========================================
+   得点確定
+========================================== */
 
 async function applyRoundScores(
   data,
@@ -1475,29 +1459,18 @@ async function applyRoundScores(
 
   if(
     !rd.id ||
-    rd.finished
+    rd.finished ||
+    rd.skipped ||
+    rd.scoresApplied
   ){
-
     return;
-
   }
 
 
   if(
     settlingRoundId === rd.id
   ){
-
     return;
-
-  }
-
-
-  if(
-    rd.scoresApplied
-  ){
-
-    return;
-
   }
 
 
@@ -1516,7 +1489,7 @@ async function applyRoundScores(
         answers
       )
       .filter(
-        ([playerId, value]) =>
+        ([playerId,value]) =>
           value &&
           value.roundId === rd.id &&
           playerId !== rd.aUid
@@ -1524,7 +1497,7 @@ async function applyRoundScores(
 
 
     for(
-      const [playerId, value]
+      const [playerId,value]
       of currentAnswers
     ){
 
@@ -1532,13 +1505,6 @@ async function applyRoundScores(
         Number(
           value.points || 0
         );
-
-
-      if(points <= 0){
-
-        continue;
-
-      }
 
 
       const playerRef =
@@ -1553,14 +1519,13 @@ async function applyRoundScores(
         currentPlayer => {
 
           if(!currentPlayer){
-
             return currentPlayer;
-
           }
 
 
           const scoreRounds =
-            currentPlayer.scoreRounds || {};
+            currentPlayer.scoreRounds ||
+            {};
 
 
           const roundKey =
@@ -1575,16 +1540,8 @@ async function applyRoundScores(
               roundKey
             )
           ){
-
             return currentPlayer;
-
           }
-
-
-          const currentScore =
-            Number(
-              currentPlayer.score || 0
-            );
 
 
           return {
@@ -1592,15 +1549,14 @@ async function applyRoundScores(
             ...currentPlayer,
 
             score:
-              currentScore +
+              Number(
+                currentPlayer.score || 0
+              ) +
               points,
 
             scoreRounds:{
               ...scoreRounds,
-
-              [roundKey]:
-                points
-
+              [roundKey]:points
             }
 
           };
@@ -1618,11 +1574,9 @@ async function applyRoundScores(
       ),
       {
 
-        scoresApplied:
-          true,
-
-        finished:
-          true
+        scoresApplied:true,
+        finished:true,
+        finishedAt:Date.now()
 
       }
     );
@@ -1644,16 +1598,14 @@ async function applyRoundScores(
 }
 
 
-/* ==================================================
-   ゲーム同期
-================================================== */
+/* ==========================================
+   同期
+========================================== */
 
 async function sync(data){
 
   if(!user){
-
     return;
-
   }
 
 
@@ -1665,58 +1617,55 @@ async function sync(data){
     data.roundData || {};
 
 
-  $("players")
-    .textContent =
-      "参加者：" +
-      (
-        players.length
-          ? players
-              .map(
-                ([id,p]) =>
-                  `${p.name} (${getDisplayScore(p,id,data)}点)`
-              )
-              .join("、")
-          : "なし"
-      );
+  $("players").textContent =
+    "参加者：" +
+    (
+      players.length
+        ? players
+            .map(
+              ([id,p]) =>
+                `${p.name} (${getDisplayScore(p,id,data)}点)`
+            )
+            .join("、")
+        : "なし"
+    );
 
 
   const myPlayer =
     data.players?.[user.uid];
 
 
-  $("myScore")
-    .textContent =
-      getDisplayScore(
-        myPlayer,
-        user.uid,
-        data
-      );
+  $("myScore").textContent =
+    getDisplayScore(
+      myPlayer,
+      user.uid,
+      data
+    );
 
 
   round =
     rd.id || 0;
 
 
-  /* ==================================================
-     ゲーム開始前
-  ================================================== */
+  /* ======================================
+     開始前
+  ====================================== */
 
   if(!round){
+
+    stopTimer();
 
     $("promptCard")
       .classList
       .add("hidden");
 
-
     $("answerCard")
       .classList
       .add("hidden");
 
-
     $("resultCard")
       .classList
       .add("hidden");
-
 
     $("skipRound")
       .classList
@@ -1730,14 +1679,16 @@ async function sync(data){
 
     $("roomMessage")
       .textContent =
-        "ゲーム作成者が「次のお題を開始」を押してください。";
+        players.length < 2
+          ? "2人以上参加するとゲームを開始できます。"
+          : "ゲーム作成者が「次のお題を開始」を押してください。";
 
 
     $("hostControls")
       .classList
       .toggle(
         "hidden",
-        !isHost
+        data.hostUid !== user.uid
       );
 
 
@@ -1750,9 +1701,9 @@ async function sync(data){
     rd.aUid === user.uid;
 
 
-  /* ==================================================
+  /* ======================================
      ラウンド変更
-  ================================================== */
+  ====================================== */
 
   if(
     currentAnswerRound !== rd.id
@@ -1763,29 +1714,152 @@ async function sync(data){
   }
 
 
-  /* ==================================================
-     ラウンド進行中
-  ================================================== */
+  /* ======================================
+     終了
+  ====================================== */
 
-  if(!rd.finished){
+  if(rd.finished){
+
+    stopTimer();
+
+
+    $("promptCard")
+      .classList
+      .add("hidden");
+
+
+    $("answerCard")
+      .classList
+      .add("hidden");
+
+
+    $("skipRound")
+      .classList
+      .add("hidden");
+
 
     $("resultCard")
       .classList
-      .add("hidden");
+      .remove("hidden");
+
+
+    /*
+      スキップ
+    */
+
+    if(rd.skipped){
+
+      renderSkippedResult(
+        data
+      );
+
+    }else{
+
+      renderResults(
+        data
+      );
+
+    }
+
+
+    /*
+      次のラウンドを開始する人。
+
+      通常終了：
+      今回のA
+
+      スキップ：
+      次のA
+    */
+
+    const nextStarterUid =
+      rd.skipped
+        ? getNextAUid(
+            players,
+            rd.aUid
+          )
+        : rd.aUid;
 
 
     $("hostControls")
       .classList
-      .add("hidden");
+      .toggle(
+        "hidden",
+        user.uid !== nextStarterUid
+      );
+
+
+    if(rd.skipped){
+
+      if(
+        user.uid === nextStarterUid
+      ){
+
+        $("roleTitle")
+          .textContent =
+            "🎭 次はあなたがAです";
+
+
+        $("roomMessage")
+          .textContent =
+            "「次のお題を開始」を押してください。";
+
+      }else{
+
+        $("roleTitle")
+          .textContent =
+            "ラウンド終了";
+
+
+        $("roomMessage")
+          .textContent =
+            "Aがお題をスキップしました。次のAが開始するのを待っています。";
+
+      }
+
+    }else{
+
+      $("roleTitle")
+        .textContent =
+          "ラウンド終了";
+
+
+      $("roomMessage")
+        .textContent =
+          isA
+            ? "全員の回答が完了しました。「次のお題を開始」を押してください。"
+            : "全員の回答が完了しました。次のお題を待っています。";
+
+    }
+
+
+    return;
 
   }
 
 
-  /* ==================================================
+  /* ======================================
+     進行中
+  ====================================== */
+
+  $("resultCard")
+    .classList
+    .add("hidden");
+
+
+  $("hostControls")
+    .classList
+    .add("hidden");
+
+
+  /* ======================================
      A
-  ================================================== */
+  ====================================== */
 
   if(isA){
+
+    stopTimer();
+
 
     $("roleTitle")
       .textContent =
@@ -1812,32 +1886,6 @@ async function sync(data){
         rd.expr || "";
 
 
-    /*
-      スキップ済み・終了済みなら
-      Aの操作ボタンを無効化。
-    */
-
-    if(
-      rd.finished ||
-      rd.skipped
-    ){
-
-      $("skipRound")
-        .classList
-        .add("hidden");
-
-    }else{
-
-      $("skipRound")
-        .classList
-        .remove("hidden");
-
-      $("skipRound")
-        .disabled = false;
-
-    }
-
-
     if(rd.performed){
 
       performedLocked = true;
@@ -1854,14 +1902,21 @@ async function sync(data){
 
       $("performed")
         .textContent =
-        "表現済み";
+          "表現済み";
+
+
+      /*
+        表現後はスキップ不可。
+      */
+
+      $("skipRound")
+        .classList
+        .add("hidden");
 
 
       $("roomMessage")
         .textContent =
-        rd.finished
-          ? "ラウンド終了"
-          : "全員の回答を待っています。";
+          "全員の回答を待っています。";
 
     }else{
 
@@ -1879,21 +1934,30 @@ async function sync(data){
 
       $("performed")
         .textContent =
-        "表現した！";
+          "表現した！";
+
+
+      $("skipRound")
+        .classList
+        .remove("hidden");
+
+
+      $("skipRound")
+        .disabled = false;
 
 
       $("roomMessage")
         .textContent =
-        "お題を確認して表現してください。";
+          "お題を確認して表現してください。";
 
     }
 
   }
 
 
-  /* ==================================================
+  /* ======================================
      B
-  ================================================== */
+  ====================================== */
 
   else{
 
@@ -1921,10 +1985,6 @@ async function sync(data){
       myAnswer.roundId === rd.id;
 
 
-    /* ----------------------------------------------
-       回答済み
-    ---------------------------------------------- */
-
     if(alreadyAnswered){
 
       answerSubmittedRound =
@@ -1939,52 +1999,33 @@ async function sync(data){
         .add("hidden");
 
 
-      if(!rd.finished){
-
-        $("roomMessage")
-          .textContent =
+      $("roomMessage")
+        .textContent =
           "回答を受け付けました。全員の回答を待っています。";
-
-      }
 
     }
 
 
-    /* ----------------------------------------------
-       ローカル上で回答済み
-    ---------------------------------------------- */
-
     else if(
       answerSubmittedRound === rd.id
     ){
+
+      stopTimer();
+
 
       $("answerCard")
         .classList
         .add("hidden");
 
 
-      stopTimer();
-
-
-      if(!rd.finished){
-
-        $("roomMessage")
-          .textContent =
+      $("roomMessage")
+        .textContent =
           "回答を受け付けました。全員の回答を待っています。";
-
-      }
 
     }
 
 
-    /* ----------------------------------------------
-       Aが表現済み
-    ---------------------------------------------- */
-
-    else if(
-      rd.performed &&
-      !rd.finished
-    ){
+    else if(rd.performed){
 
       makeChoices(
         rd.expr,
@@ -2000,16 +2041,15 @@ async function sync(data){
 
       $("roomMessage")
         .textContent =
-        "Aの表現を見て回答してください。";
+          "Aの表現を見て回答してください。";
 
     }
 
 
-    /* ----------------------------------------------
-       Aがまだ表現していない
-    ---------------------------------------------- */
+    else{
 
-    else if(!rd.finished){
+      stopTimer();
+
 
       $("answerCard")
         .classList
@@ -2018,16 +2058,16 @@ async function sync(data){
 
       $("roomMessage")
         .textContent =
-        "Aが表現するのを待っています。";
+          "Aが表現するのを待っています。";
 
     }
 
   }
 
 
-  /* ==================================================
-     全員回答済み判定
-  ================================================== */
+  /* ======================================
+     全員回答チェック
+  ====================================== */
 
   if(
     isA &&
@@ -2054,7 +2094,8 @@ async function sync(data){
 
     if(
       answerPlayers.length > 0 &&
-      answeredCount === answerPlayers.length
+      answeredCount ===
+      answerPlayers.length
     ){
 
       await applyRoundScores(
@@ -2066,144 +2107,12 @@ async function sync(data){
 
   }
 
-
-  /* ==================================================
-     ラウンド終了
-  ================================================== */
-
-  if(rd.finished){
-
-    $("promptCard")
-      .classList
-      .add("hidden");
-
-
-    $("answerCard")
-      .classList
-      .add("hidden");
-
-
-    $("skipRound")
-      .classList
-      .add("hidden");
-
-
-    $("resultCard")
-      .classList
-      .remove("hidden");
-
-
-    stopTimer();
-
-
-    /*
-      スキップされた場合
-    */
-
-    if(rd.skipped){
-
-      $("result").innerHTML = `
-
-        <div class="card center">
-
-          <div
-            style="
-              font-size:42px;
-              margin-bottom:10px;
-            "
-          >
-            ⏭️
-          </div>
-
-          <h2>
-            このお題はスキップされました
-          </h2>
-
-          <p class="muted">
-            Aがお題をスキップしました。
-          </p>
-
-          <div
-            style="
-              margin-top:18px;
-              font-size:18px;
-              font-weight:700;
-            "
-          >
-            今回はポイントは入りません。
-          </div>
-
-        </div>
-
-      `;
-
-    }else{
-
-      renderResults(data);
-
-    }
-
-
-    /*
-      次のお題を開始できる人を決定。
-
-      通常：
-      今回のA
-
-      スキップ：
-      今回のAの次のプレイヤー
-    */
-
-    let nextStarterUid = null;
-
-
-    if(rd.skipped){
-
-      const currentAIndex =
-        players.findIndex(
-          ([id]) =>
-            id === rd.aUid
-        );
-
-
-      if(
-        currentAIndex >= 0 &&
-        players.length > 1
-      ){
-
-        nextStarterUid =
-          players[
-            (
-              currentAIndex + 1
-            ) %
-            players.length
-          ][0];
-
-      }
-
-    }else{
-
-      nextStarterUid =
-        rd.aUid;
-
-    }
-
-
-    $("hostControls")
-      .classList
-      .toggle(
-        "hidden",
-        user.uid !== nextStarterUid
-      );
-
-  }
-
 }
 
 
-/* ==================================================
-   回答選択肢
-================================================== */
+/* ==========================================
+   選択肢
+========================================== */
 
 function makeChoices(
   correct,
@@ -2214,9 +2123,7 @@ function makeChoices(
   if(
     answerSubmittedRound === roundId
   ){
-
     return;
-
   }
 
 
@@ -2268,65 +2175,63 @@ function makeChoices(
     ]);
 
 
-  choices.forEach(
-    x => {
+  choices.forEach(x => {
 
-      const button =
-        document.createElement(
-          "button"
+    const button =
+      document.createElement(
+        "button"
+      );
+
+
+    button.className =
+      "choice";
+
+
+    button.textContent =
+      x;
+
+
+    button.onclick = () => {
+
+      if(
+        answerSubmittedRound === roundId
+      ){
+        return;
+      }
+
+
+      document
+        .querySelectorAll(
+          "#choices .choice"
+        )
+        .forEach(
+          element =>
+            element
+              .classList
+              .remove("selected")
         );
 
 
-      button.className =
-        "choice";
+      button
+        .classList
+        .add("selected");
 
 
-      button.textContent =
-        x;
+      answer = x;
 
 
-      button.onclick = () => {
+      $("sendAnswer")
+        .disabled = false;
 
-        if(
-          answerSubmittedRound === roundId
-        ){
-
-          return;
-
-        }
+    };
 
 
-        document
-          .querySelectorAll(
-            "#choices .choice"
-          )
-          .forEach(
-            element =>
-              element
-                .classList
-                .remove("selected")
-          );
-
-
+    $("choices")
+      .appendChild(
         button
-          .classList
-          .add("selected");
+      );
 
-
-        answer = x;
-
-
-        $("sendAnswer")
-          .disabled = false;
-
-      };
-
-
-      $("choices")
-        .appendChild(button);
-
-    }
-  );
+  });
 
 
   startTimer(
@@ -2336,18 +2241,16 @@ function makeChoices(
 }
 
 
-/* ==================================================
+/* ==========================================
    タイマー
-================================================== */
+========================================== */
 
 function startTimer(
   startedAt
 ){
 
   if(!startedAt){
-
     return;
-
   }
 
 
@@ -2357,10 +2260,13 @@ function startTimer(
   function updateTimer(){
 
     const elapsed =
-      (
-        Date.now() -
-        startedAt
-      ) / 1000;
+      Math.max(
+        0,
+        (
+          Date.now() -
+          startedAt
+        ) / 1000
+      );
 
 
     $("timer")
@@ -2398,9 +2304,9 @@ function stopTimer(){
 }
 
 
-/* ==================================================
-   得点計算
-================================================== */
+/* ==========================================
+   得点
+========================================== */
 
 function calculateScore(
   isCorrect,
@@ -2408,30 +2314,22 @@ function calculateScore(
 ){
 
   if(!isCorrect){
-
     return 0;
-
   }
 
 
   if(elapsed <= 5){
-
     return 150;
-
   }
 
 
   if(elapsed <= 10){
-
     return 130;
-
   }
 
 
   if(elapsed <= 20){
-
     return 110;
-
   }
 
 
@@ -2440,9 +2338,60 @@ function calculateScore(
 }
 
 
-/* ==================================================
-   結果表示
-================================================== */
+/* ==========================================
+   ランキングHTML
+========================================== */
+
+function makeRanking(
+  data
+){
+
+  return Object.entries(
+    data.players || {}
+  )
+
+  .filter(
+    ([id,player]) =>
+      player
+  )
+
+  .sort(
+    (a,b) =>
+      Number(
+        b[1].score || 0
+      ) -
+      Number(
+        a[1].score || 0
+      )
+  )
+
+  .map(
+    ([id,player],index) => `
+
+      <div class="rank">
+
+        <span>
+          ${index + 1}位　
+          ${escapeHtml(player.name)}
+        </span>
+
+        <strong>
+          ${Number(player.score || 0)}点
+        </strong>
+
+      </div>
+
+    `
+  )
+
+  .join("");
+
+}
+
+
+/* ==========================================
+   通常結果
+========================================== */
 
 function renderResults(data){
 
@@ -2475,9 +2424,7 @@ function renderResults(data){
 
 
           if(!player){
-
             return "";
-
           }
 
 
@@ -2510,17 +2457,15 @@ function renderResults(data){
               >
 
                 <strong>
-                  ${player.name}
+                  ${escapeHtml(player.name)}
                 </strong>
 
                 <strong>
-
                   ${
                     isCorrect
                       ? "⭕ 正解"
                       : "❌ 不正解"
                   }
-
                 </strong>
 
               </div>
@@ -2536,7 +2481,10 @@ function renderResults(data){
               >
 
                 回答：
-                ${value.answer || "回答なし"}
+                ${escapeHtml(
+                  value.answer ||
+                  "回答なし"
+                )}
 
               </div>
 
@@ -2559,12 +2507,10 @@ function renderResults(data){
               <div
                 style="margin-top:5px"
               >
-
                 獲得：
                 <strong>
                   ${points}点
                 </strong>
-
               </div>
 
             </div>
@@ -2578,46 +2524,9 @@ function renderResults(data){
 
 
   const ranking =
-    Object.entries(
-      data.players || {}
-    )
-    .filter(
-      ([id,player]) =>
-        player
-    )
-    .sort(
-      (a,b) =>
-        Number(
-          b[1].score || 0
-        ) -
-        Number(
-          a[1].score || 0
-        )
-    )
-    .map(
-      ([id,player],index) => `
-
-        <div class="rank">
-
-          <span>
-
-            ${index + 1}位　
-            ${player.name}
-
-          </span>
-
-
-          <strong>
-
-            ${player.score || 0}点
-
-          </strong>
-
-        </div>
-
-      `
-    )
-    .join("");
+    makeRanking(
+      data
+    );
 
 
   $("result").innerHTML = `
@@ -2628,7 +2537,6 @@ function renderResults(data){
         今回のお題
       </div>
 
-
       <div
         style="
           font-size:20px;
@@ -2636,9 +2544,7 @@ function renderResults(data){
           margin:8px 0 20px;
         "
       >
-
-        「${rd.line || ""}」
-
+        「${escapeHtml(rd.line || "")}」
       </div>
 
 
@@ -2648,15 +2554,12 @@ function renderResults(data){
 
 
       <div class="big">
-
-        「${rd.expr || ""}」
-
+        「${escapeHtml(rd.expr || "")}」
       </div>
 
 
       ${
-        answerRows
-        ||
+        answerRows ||
         `
           <p class="muted">
             回答はありませんでした。
@@ -2674,8 +2577,7 @@ function renderResults(data){
       </h2>
 
       ${
-        ranking
-        ||
+        ranking ||
         `
           <p class="muted">
             参加者がいません。
@@ -2690,14 +2592,106 @@ function renderResults(data){
 }
 
 
-/* ==================================================
+/* ==========================================
+   スキップ結果
+========================================== */
+
+function renderSkippedResult(
+  data
+){
+
+  const rd =
+    data.roundData || {};
+
+
+  const skippedPlayer =
+    data.players?.[rd.aUid];
+
+
+  const ranking =
+    makeRanking(
+      data
+    );
+
+
+  $("result").innerHTML = `
+
+    <div class="card center">
+
+      <div
+        style="
+          font-size:42px;
+          margin-bottom:10px;
+        "
+      >
+        ⏭️
+      </div>
+
+      <h2>
+        Aをスキップしました
+      </h2>
+
+      <p class="muted">
+
+        ${
+          skippedPlayer
+            ? escapeHtml(
+                skippedPlayer.name
+              ) + "さんの"
+            : ""
+        }
+
+        ラウンドはスキップされました。
+
+      </p>
+
+      <div
+        style="
+          margin-top:18px;
+          font-size:18px;
+          font-weight:700;
+        "
+      >
+        このラウンドではポイントは入りません。
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2>
+        🏆 現在の順位
+      </h2>
+
+      ${
+        ranking ||
+        `
+          <p class="muted">
+            参加者がいません。
+          </p>
+        `
+      }
+
+    </div>
+
+  `;
+
+}
+
+
+/* ==========================================
    ゲーム作成
-================================================== */
+========================================== */
 
 $("create").onclick =
 async () => {
 
   try{
+
+    $("create").disabled =
+      true;
+
 
     const playerName =
       $("hostName")
@@ -2706,11 +2700,54 @@ async () => {
       "プレイヤー1";
 
 
-    const id =
-      code();
-
-
     await init();
+
+
+    /*
+      コード重複をなるべく避ける
+    */
+
+    let id = null;
+
+
+    for(
+      let attempt = 0;
+      attempt < 20;
+      attempt++
+    ){
+
+      const candidate =
+        code();
+
+
+      const existing =
+        await get(
+          ref(
+            db,
+            `rooms/${candidate}`
+          )
+        );
+
+
+      if(!existing.exists()){
+
+        id =
+          candidate;
+
+        break;
+
+      }
+
+    }
+
+
+    if(!id){
+
+      throw new Error(
+        "参加コードを作成できませんでした。もう一度お試しください。"
+      );
+
+    }
 
 
     await set(
@@ -2727,7 +2764,8 @@ async () => {
           user.uid,
 
         roundData:{
-          id:0
+          id:0,
+          roundNumber:0
         }
 
       }
@@ -2743,7 +2781,9 @@ async () => {
 
   }catch(error){
 
-    console.error(error);
+    console.error(
+      error
+    );
 
 
     alert(
@@ -2751,19 +2791,28 @@ async () => {
       error.message
     );
 
+  }finally{
+
+    $("create").disabled =
+      false;
+
   }
 
 };
 
 
-/* ==================================================
-   ゲーム参加
-================================================== */
+/* ==========================================
+   参加
+========================================== */
 
 $("join").onclick =
 async () => {
 
   try{
+
+    $("join").disabled =
+      true;
+
 
     const id =
       $("roomInput")
@@ -2800,7 +2849,9 @@ async () => {
 
   }catch(error){
 
-    console.error(error);
+    console.error(
+      error
+    );
 
 
     alert(
@@ -2808,19 +2859,28 @@ async () => {
       error.message
     );
 
+  }finally{
+
+    $("join").disabled =
+      false;
+
   }
 
 };
 
 
-/* ==================================================
-   次のお題を開始
-================================================== */
+/* ==========================================
+   次のお題
+========================================== */
 
 $("startRound").onclick =
 async () => {
 
   try{
+
+    $("startRound").disabled =
+      true;
+
 
     await init();
 
@@ -2839,7 +2899,9 @@ async () => {
 
 
     const players =
-      getPlayers(data);
+      getPlayers(
+        data
+      );
 
 
     if(
@@ -2855,17 +2917,20 @@ async () => {
     }
 
 
-    const currentRoundData =
+    const rd =
       data.roundData || {};
 
 
     const currentRoundId =
-      currentRoundData.id || 0;
+      rd.id || 0;
 
 
-    /* ----------------------------------------------
-       最初のお題
-    ---------------------------------------------- */
+    let newAUid = null;
+
+
+    /*
+      最初のラウンド
+    */
 
     if(!currentRoundId){
 
@@ -2881,172 +2946,90 @@ async () => {
 
       }
 
+
+      newAUid =
+        players[0][0];
+
     }
 
 
-    /* ----------------------------------------------
-       2ラウンド目以降
-    ---------------------------------------------- */
+    /*
+      2ラウンド目以降
+    */
 
     else{
 
-      /*
-        通常終了：
-        前ラウンドのAが開始
-
-        スキップ：
-        前ラウンドのAの次のプレイヤーが開始
-      */
-
-      let allowedStarterUid =
-        currentRoundData.aUid;
-
-
-      if(
-        currentRoundData.skipped
-      ){
-
-        const currentAIndex =
-          players.findIndex(
-            ([id]) =>
-              id === currentRoundData.aUid
-          );
-
-
-        if(
-          currentAIndex >= 0 &&
-          players.length > 1
-        ){
-
-          allowedStarterUid =
-            players[
-              (
-                currentAIndex + 1
-              ) %
-              players.length
-            ][0];
-
-        }
-
-      }
-
-
-      if(
-        allowedStarterUid !== user.uid
-      ){
-
-        if(
-          currentRoundData.skipped
-        ){
-
-          alert(
-            "次のお題を開始できるのは、次の表現者です。"
-          );
-
-        }else{
-
-          alert(
-            "次のお題を開始できるのは、そのラウンドの表現者だけです。"
-          );
-
-        }
-
-        return;
-
-      }
-
-
-      if(
-        !currentRoundData.finished
-      ){
+      if(!rd.finished){
 
         alert(
-          "ラウンドが終了してから次のお題を開始してください。"
+          "現在のラウンドがまだ終了していません。"
         );
 
         return;
 
       }
 
-    }
 
+      const nextAUid =
+        getNextAUid(
+          players,
+          rd.aUid
+        );
 
-    const nextRound =
-      (
-        currentRoundData.roundNumber || 0
-      ) + 1;
-
-
-    /*
-      Aを参加順で決定。
-
-      最初：
-      参加順1番目
-
-      通常：
-      前回Aの次
-
-      スキップ：
-      スキップしたAの次の人が
-      次ラウンドの開始者となり、
-      そのさらに次の人がAになる。
-    */
-
-    let aUid;
-
-
-    const currentAIndex =
-      players.findIndex(
-        ([id]) =>
-          id === currentRoundData.aUid
-      );
-
-
-    if(nextRound === 1){
-
-      aUid =
-        players[0][0];
-
-    }else{
 
       /*
-        前ラウンドのAの次の人
+        スキップ時は次のA本人が開始。
+
+        通常終了時は前回Aが
+        次のお題を開始。
       */
 
+      const allowedStarterUid =
+        rd.skipped
+          ? nextAUid
+          : rd.aUid;
+
+
       if(
-        currentAIndex >= 0
+        user.uid !==
+        allowedStarterUid
       ){
 
-        const nextIndex =
-          (
-            currentAIndex + 1
-          ) %
-          players.length;
+        alert(
+          rd.skipped
+            ? "次の表現者が次のお題を開始できます。"
+            : "前のラウンドの表現者が次のお題を開始できます。"
+        );
 
-
-        aUid =
-          players[nextIndex][0];
-
-      }else{
-
-        const fallbackIndex =
-          (
-            nextRound - 1
-          ) %
-          players.length;
-
-
-        aUid =
-          players[fallbackIndex][0];
+        return;
 
       }
 
+
+      /*
+        新しいAは必ず前回Aの次。
+      */
+
+      newAUid =
+        nextAUid;
+
     }
 
 
-    /*
-      セリフ
-    */
+    if(!newAUid){
+
+      throw new Error(
+        "次の表現者を決定できませんでした。"
+      );
+
+    }
+
+
+    const nextRoundNumber =
+      Number(
+        rd.roundNumber || 0
+      ) + 1;
+
 
     const line =
       lines[
@@ -3057,10 +3040,6 @@ async () => {
       ];
 
 
-    /*
-      表現
-    */
-
     const expr =
       exprs[
         Math.floor(
@@ -3070,17 +3049,9 @@ async () => {
       ];
 
 
-    /*
-      ラウンドID
-    */
-
     const roundId =
       Date.now();
 
-
-    /*
-      新しいラウンド
-    */
 
     await update(
       ref(
@@ -3095,10 +3066,10 @@ async () => {
             roundId,
 
           roundNumber:
-            nextRound,
+            nextRoundNumber,
 
           aUid:
-            aUid,
+            newAUid,
 
           line:
             line,
@@ -3119,7 +3090,10 @@ async () => {
             false,
 
           skipped:
-            false
+            false,
+
+          startedAt:
+            Date.now()
 
         },
 
@@ -3129,23 +3103,25 @@ async () => {
     );
 
 
-    /*
-      ローカル状態リセット
-    */
+    performedLocked =
+      false;
 
-    performedLocked = false;
+    currentAnswerRound =
+      null;
 
-    currentAnswerRound = null;
+    answerSubmittedRound =
+      null;
 
-    answerSubmittedRound = null;
+    answer =
+      "";
 
-    answer = "";
-
-    settlingRoundId = null;
+    settlingRoundId =
+      null;
 
 
     $("performed")
-      .disabled = false;
+      .disabled =
+      false;
 
 
     $("performed")
@@ -3155,15 +3131,17 @@ async () => {
 
     $("performed")
       .textContent =
-      "表現した！";
+        "表現した！";
 
 
     $("skipRound")
-      .disabled = false;
+      .disabled =
+      false;
 
 
     $("sendAnswer")
-      .disabled = true;
+      .disabled =
+      true;
 
 
     $("resultCard")
@@ -3178,7 +3156,9 @@ async () => {
 
   }catch(error){
 
-    console.error(error);
+    console.error(
+      error
+    );
 
 
     alert(
@@ -3186,14 +3166,19 @@ async () => {
       error.message
     );
 
+  }finally{
+
+    $("startRound").disabled =
+      false;
+
   }
 
 };
 
 
-/* ==================================================
-   A：表現した！
-================================================== */
+/* ==========================================
+   A：表現した
+========================================== */
 
 $("performed").onclick =
 async () => {
@@ -3201,27 +3186,17 @@ async () => {
   try{
 
     if(performedLocked){
-
       return;
-
     }
 
 
-    performedLocked = true;
+    performedLocked =
+      true;
 
 
     $("performed")
-      .disabled = true;
-
-
-    $("performed")
-      .classList
-      .add("done");
-
-
-    $("performed")
-      .textContent =
-      "表現済み";
+      .disabled =
+      true;
 
 
     const snapshot =
@@ -3237,34 +3212,13 @@ async () => {
       snapshot.val() || {};
 
 
-    if(rd.performed){
-
-      return;
-
-    }
-
-
     if(
       rd.aUid !== user.uid
     ){
 
-      performedLocked = false;
-
-
-      $("performed")
-        .disabled = false;
-
-
-      $("performed")
-        .classList
-        .remove("done");
-
-
-      $("performed")
-        .textContent =
-        "表現した！";
-
-      return;
+      throw new Error(
+        "現在の表現者ではありません。"
+      );
 
     }
 
@@ -3279,8 +3233,11 @@ async () => {
     }
 
 
-    const now =
-      Date.now();
+    if(rd.performed){
+
+      return;
+
+    }
 
 
     await update(
@@ -3290,26 +3247,37 @@ async () => {
       ),
       {
 
-        performed:
-          true,
-
-        performedAt:
-          now
+        performed:true,
+        performedAt:Date.now()
 
       }
     );
 
 
-  }catch(error){
-
-    console.error(error);
-
-
-    performedLocked = false;
+    $("performed")
+      .classList
+      .add("done");
 
 
     $("performed")
-      .disabled = false;
+      .textContent =
+        "表現済み";
+
+
+  }catch(error){
+
+    console.error(
+      error
+    );
+
+
+    performedLocked =
+      false;
+
+
+    $("performed")
+      .disabled =
+      false;
 
 
     $("performed")
@@ -3319,7 +3287,7 @@ async () => {
 
     $("performed")
       .textContent =
-      "表現した！";
+        "表現した！";
 
 
     alert(
@@ -3332,17 +3300,29 @@ async () => {
 };
 
 
-/* ==================================================
-   A：お題をスキップ
-================================================== */
+/* ==========================================
+   A：スキップ
+========================================== */
 
 $("skipRound").onclick =
 async () => {
 
   try{
 
+    const confirmed =
+      confirm(
+        "このAをスキップして、次のプレイヤーに交代しますか？"
+      );
+
+
+    if(!confirmed){
+      return;
+    }
+
+
     $("skipRound")
-      .disabled = true;
+      .disabled =
+      true;
 
 
     const snapshot =
@@ -3358,42 +3338,39 @@ async () => {
       snapshot.val() || {};
 
 
-    /*
-      A本人か確認
-    */
-
     if(
       rd.aUid !== user.uid
     ){
 
-      $("skipRound")
-        .disabled = false;
-
-      return;
+      throw new Error(
+        "現在の表現者ではありません。"
+      );
 
     }
 
-
-    /*
-      すでに終了している場合
-    */
 
     if(
       rd.finished ||
       rd.skipped
     ){
+      return;
+    }
+
+
+    /*
+      表現した後はスキップ不可。
+    */
+
+    if(rd.performed){
+
+      alert(
+        "「表現した！」を押した後はスキップできません。"
+      );
 
       return;
 
     }
 
-
-    /*
-      スキップを確定。
-
-      performed済みかどうかに関係なく
-      スキップ可能。
-    */
 
     await update(
       ref(
@@ -3402,32 +3379,17 @@ async () => {
       ),
       {
 
-        skipped:
-          true,
-
-        finished:
-          true,
-
-        scoresApplied:
-          true
+        skipped:true,
+        finished:true,
+        scoresApplied:true,
+        skippedAt:Date.now()
 
       }
     );
 
 
-    /*
-      Aの操作をロック
-    */
-
-    performedLocked = true;
-
-
-    $("performed")
-      .disabled = true;
-
-
-    $("skipRound")
-      .disabled = true;
+    performedLocked =
+      true;
 
 
     stopTimer();
@@ -3441,23 +3403,25 @@ async () => {
     );
 
 
-    $("skipRound")
-      .disabled = false;
-
-
     alert(
-      "お題をスキップできませんでした。\n\n" +
+      "Aをスキップできませんでした。\n\n" +
       error.message
     );
+
+  }finally{
+
+    $("skipRound")
+      .disabled =
+      false;
 
   }
 
 };
 
 
-/* ==================================================
-   B：回答送信
-================================================== */
+/* ==========================================
+   B：回答
+========================================== */
 
 $("sendAnswer").onclick =
 async () => {
@@ -3465,14 +3429,13 @@ async () => {
   try{
 
     if(!answer){
-
       return;
-
     }
 
 
     $("sendAnswer")
-      .disabled = true;
+      .disabled =
+      true;
 
 
     const snapshot =
@@ -3492,23 +3455,31 @@ async () => {
       data.roundData || {};
 
 
-    /*
-      ラウンド終了後は回答不可。
-    */
-
     if(
       rd.finished ||
       rd.skipped
     ){
+      return;
+    }
+
+
+    if(
+      rd.aUid === user.uid
+    ){
+      return;
+    }
+
+
+    if(!rd.performed){
+
+      $("sendAnswer")
+        .disabled =
+        false;
 
       return;
 
     }
 
-
-    /*
-      すでに回答済み
-    */
 
     const existingAnswer =
       data.answers?.[user.uid];
@@ -3531,69 +3502,26 @@ async () => {
         .add("hidden");
 
 
-      $("roomMessage")
-        .textContent =
-        "回答を受け付けました。全員の回答を待っています。";
-
       return;
 
     }
 
-
-    /*
-      Aは回答不可
-    */
-
-    if(
-      rd.aUid === user.uid
-    ){
-
-      $("sendAnswer")
-        .disabled = true;
-
-      return;
-
-    }
-
-
-    /*
-      Aがまだ表現していない
-    */
-
-    if(!rd.performed){
-
-      $("sendAnswer")
-        .disabled = false;
-
-      return;
-
-    }
-
-
-    /*
-      回答時間
-    */
 
     const elapsed =
       rd.performedAt
-        ? (
-            Date.now() -
-            rd.performedAt
-          ) / 1000
+        ? Math.max(
+            0,
+            (
+              Date.now() -
+              rd.performedAt
+            ) / 1000
+          )
         : 999;
 
-
-    /*
-      正解判定
-    */
 
     const correct =
       answer === rd.expr;
 
-
-    /*
-      今回の得点
-    */
 
     const points =
       calculateScore(
@@ -3601,10 +3529,6 @@ async () => {
         elapsed
       );
 
-
-    /*
-      回答保存
-    */
 
     await set(
       ref(
@@ -3635,10 +3559,6 @@ async () => {
     );
 
 
-    /*
-      累計scoreはここでは変更しない。
-    */
-
     answerSubmittedRound =
       rd.id;
 
@@ -3653,7 +3573,7 @@ async () => {
 
     $("roomMessage")
       .textContent =
-      "回答を受け付けました。全員の回答を待っています。";
+        "回答を受け付けました。全員の回答を待っています。";
 
 
     answer = "";
@@ -3661,11 +3581,14 @@ async () => {
 
   }catch(error){
 
-    console.error(error);
+    console.error(
+      error
+    );
 
 
     $("sendAnswer")
-      .disabled = false;
+      .disabled =
+      false;
 
 
     alert(
@@ -3678,23 +3601,34 @@ async () => {
 };
 
 
-/* ==================================================
-   初期化
-================================================== */
+/* ==========================================
+   Firebase初期接続確認
+========================================== */
 
-init().catch(
-  error => {
+init()
+  .then(() => {
+
+    console.log(
+      "Firebase接続成功"
+    );
+
+  })
+  .catch(error => {
 
     console.error(
       "Firebase初期化エラー:",
       error
     );
 
-  }
-);
+
+    alert(
+      "Firebaseへの接続に失敗しました。\n\n" +
+      error.message
+    );
+
+  });
 
 </script>
 
 </body>
-
 </html>
