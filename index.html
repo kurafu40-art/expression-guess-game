@@ -89,6 +89,26 @@ input{
   font-size:12px
 }
 .center{text-align:center}
+
+.score{
+  font-size:24px;
+  font-weight:800;
+  margin:10px 0
+}
+
+.rank{
+  padding:10px 0;
+  border-bottom:1px solid #eee;
+  display:flex;
+  justify-content:space-between
+}
+
+.timer{
+  font-size:18px;
+  font-weight:700;
+  text-align:center;
+  margin:10px 0
+}
 </style>
 </head>
 
@@ -98,7 +118,8 @@ input{
 <div class="card">
   <h1>🎭 表現当てゲーム</h1>
   <p class="muted">
-    Aがセリフを指定された表現で演じ、Bが「どんな表現だったか」を当てます。AはGRAVITY内の抽選機等を使用して決定してください。Aがゲームを作成します。
+    Aがセリフを指定された表現で演じ、A以外の全員が「どんな表現だったか」を当てます。
+    Aはラウンドごとに順番に交代します。
   </p>
 </div>
 
@@ -134,7 +155,12 @@ input{
 <div class="card center">
   <span class="badge">参加コード</span>
   <div class="big" id="roomCode"></div>
+
   <p id="players"></p>
+
+  <div class="score">
+    あなたの得点：<span id="myScore">0</span>点
+  </div>
 </div>
 
 <div class="card" id="hostControls">
@@ -150,37 +176,48 @@ input{
 
 <div class="card hidden" id="promptCard">
   <span class="badge">Aだけ見る</span>
+
   <div class="big">
     「<span id="line"></span>」を<br>
     「<span id="expr"></span>」で表現！
   </div>
+
   <button id="performed" class="primary">
     表現した！
   </button>
 </div>
 
 <div class="card hidden" id="answerCard">
-  <h2>Bの回答</h2>
+
+  <h2>回答</h2>
+
   <p class="muted">
     Aはどんな表現をしていましたか？
   </p>
+
+  <div id="timer" class="timer">
+    0.0秒
+  </div>
+
   <div id="choices"></div>
+
   <button id="sendAnswer" class="primary" disabled>
     回答する
   </button>
+
 </div>
 
 <div class="card hidden" id="resultCard">
+
   <h2>結果</h2>
-  <div id="result" class="center"></div>
-  <button id="backHome" class="secondary" style="width:100%;margin-top:12px">
-    ホームへ
-  </button>
+
+  <div id="result"></div>
+
 </div>
 
 </section>
 
-<section id="editor">
+<section id="editor" class="hidden">
 
 <div class="card">
   <h2>セリフ</h2>
@@ -237,7 +274,8 @@ import {
   set,
   onValue,
   update,
-  onDisconnect
+  onDisconnect,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 import {
@@ -379,11 +417,6 @@ let savedExprs =
   JSON.parse(localStorage.getItem("exprs") || "null");
 
 
-/*
-  既に保存されているデータがあっても、
-  新しいデフォルト項目を自動追加する
-*/
-
 let lines = savedLines
   ? [...savedLines, ...defaultLines.filter(x => !savedLines.includes(x))]
   : [...defaultLines];
@@ -402,13 +435,60 @@ localStorage.setItem("exprs", JSON.stringify(exprs));
 ------------------------- */
 
 let db;
+let app;
+let auth;
+
 let user;
 let roomId;
 let name;
-let role;
+
 let answer = "";
 let round = 0;
+
 let unsub;
+
+let answerStartedAt = 0;
+
+let timerInterval;
+
+
+/* -------------------------
+   Firebase初期化
+   ※二重初期化を防止
+------------------------- */
+
+async function init(){
+
+  if(firebaseConfig.apiKey.startsWith("YOUR_")){
+
+    alert(
+      "Firebase設定が未入力です。READMEの手順で設定してください。"
+    );
+
+    return;
+  }
+
+
+  if(!app){
+
+    app = initializeApp(firebaseConfig);
+
+    db = getDatabase(app);
+
+    auth = getAuth(app);
+
+    await signInAnonymously(auth);
+
+    user = auth.currentUser;
+
+  }else{
+
+    if(!user){
+      user = auth.currentUser;
+    }
+
+  }
+}
 
 
 /* -------------------------
@@ -416,6 +496,7 @@ let unsub;
 ------------------------- */
 
 function show(id){
+
   ["home","room","editor"].forEach(x =>
     $(x).classList.add("hidden")
   );
@@ -429,9 +510,11 @@ function show(id){
 ------------------------- */
 
 function code(){
+
   return Math.floor(
     1000 + Math.random() * 9000
   ).toString();
+
 }
 
 
@@ -440,9 +523,11 @@ function code(){
 ------------------------- */
 
 function shuffle(a){
+
   return a
     .slice()
     .sort(() => Math.random() - 0.5);
+
 }
 
 
@@ -462,6 +547,7 @@ function renderEditor(){
       </div>
     `).join("");
 
+
   $("exprList").innerHTML =
     exprs.map((x,i) => `
       <div class="list">
@@ -471,6 +557,7 @@ function renderEditor(){
         </button>
       </div>
     `).join("");
+
 }
 
 
@@ -486,7 +573,9 @@ window.delLine = i => {
     );
 
     renderEditor();
+
   }
+
 };
 
 
@@ -502,24 +591,32 @@ window.delExpr = i => {
     );
 
     renderEditor();
+
   }
+
 };
 
 
 $("editorOpen").onclick = () => {
+
   renderEditor();
+
   show("editor");
+
 };
 
 
 $("editorBack").onclick = () => {
+
   show("home");
+
 };
 
 
 $("addLine").onclick = () => {
 
-  const v = $("newLine").value.trim();
+  const v =
+    $("newLine").value.trim();
 
   if(v){
 
@@ -533,13 +630,16 @@ $("addLine").onclick = () => {
     $("newLine").value = "";
 
     renderEditor();
+
   }
+
 };
 
 
 $("addExpr").onclick = () => {
 
-  const v = $("newExpr").value.trim();
+  const v =
+    $("newExpr").value.trim();
 
   if(v){
 
@@ -553,81 +653,117 @@ $("addExpr").onclick = () => {
     $("newExpr").value = "";
 
     renderEditor();
+
   }
+
 };
-
-
-/* -------------------------
-   Firebase初期化
-------------------------- */
-
-async function init(){
-
-  if(firebaseConfig.apiKey.startsWith("YOUR_")){
-
-    alert(
-      "Firebase設定が未入力です。READMEの手順で設定してください。"
-    );
-
-    return;
-  }
-
-  const app = initializeApp(firebaseConfig);
-
-  db = getDatabase(app);
-
-  const auth = getAuth(app);
-
-  await signInAnonymously(auth);
-
-  user = auth.currentUser;
-}
 
 
 /* -------------------------
    ルームへ入る
 ------------------------- */
 
-async function enter(id,n,r){
+async function enter(id,n,isHost){
 
   await init();
 
   roomId = id;
   name = n;
-  role = r;
+
 
   const playerRef =
-    ref(db,`rooms/${id}/players/${user.uid}`);
+    ref(
+      db,
+      `rooms/${id}/players/${user.uid}`
+    );
+
+
+  /*
+    joinedAtで参加順を管理
+  */
 
   await set(playerRef,{
     name:n,
-    role:r,
-    online:true
+    online:true,
+    joinedAt:Date.now(),
+    score:0
   });
+
 
   onDisconnect(playerRef)
     .update({online:false});
 
+
   $("roomCode").textContent = id;
-
-  $("roleTitle").textContent =
-    r === "A"
-      ? "あなたはA（演じる人）"
-      : "あなたはB（回答者）";
-
-  if(r !== "A"){
-    $("hostControls").classList.add("hidden");
-  }
 
   show("room");
 
+
+  /*
+    ホストだけ「次のお題」を操作できる
+  */
+
+  if(isHost){
+
+    $("hostControls")
+      .classList
+      .remove("hidden");
+
+  }else{
+
+    $("hostControls")
+      .classList
+      .add("hidden");
+
+  }
+
+
   unsub?.();
+
 
   unsub =
     onValue(
       ref(db,`rooms/${id}`),
       snap => sync(snap.val() || {})
     );
+
+}
+
+
+/* -------------------------
+   Aを決定
+------------------------- */
+
+function getPlayers(data){
+
+  return Object.entries(
+    data.players || {}
+  )
+  .filter(([id,p]) => p.online)
+  .sort((a,b) =>
+    (a[1].joinedAt || 0) -
+    (b[1].joinedAt || 0)
+  );
+
+}
+
+
+function getCurrentA(data){
+
+  const players =
+    getPlayers(data);
+
+  if(!players.length){
+    return null;
+  }
+
+
+  const index =
+    (round - 1) % players.length;
+
+
+  return players[index]?.[0] || null;
+
 }
 
 
@@ -637,94 +773,209 @@ async function enter(id,n,r){
 
 function sync(data){
 
-  const ps =
-    Object.values(data.players || {})
-      .filter(p => p.online);
+  const players =
+    getPlayers(data);
+
 
   $("players").textContent =
     "参加者：" +
-    ps.map(p => p.name).join("、");
+    players
+      .map(([id,p]) => p.name)
+      .join("、");
 
 
-  const rd = data.roundData || {};
+  const myPlayer =
+    data.players?.[user?.uid];
 
-  round = rd.id || 0;
 
+  $("myScore").textContent =
+    myPlayer?.score || 0;
+
+
+  const rd =
+    data.roundData || {};
+
+
+  round =
+    rd.id || 0;
+
+
+  /*
+    ラウンドがまだ始まっていない
+  */
 
   if(!round){
 
+    $("promptCard")
+      .classList
+      .add("hidden");
+
+    $("answerCard")
+      .classList
+      .add("hidden");
+
+    $("resultCard")
+      .classList
+      .add("hidden");
+
+
+    $("roleTitle").textContent =
+      "次のゲームを待っています";
+
+
     $("roomMessage").textContent =
-      role === "A"
-        ? "「次のお題を開始」を押してください。"
-        : "Aがお題を開始するのを待っています。";
+      "ホストが「次のお題を開始」を押してください。";
+
 
     return;
   }
 
 
-  $("roomMessage").textContent =
-    rd.performed
-      ? (
-          role === "A"
-            ? "Bが回答するのを待っています。"
-            : "Aの表現を見て回答してください。"
-        )
-      : "Aがお題を確認中です。";
+  /*
+    今回のA
+  */
+
+  const currentA =
+    rd.aUid;
 
 
-  if(role === "A"){
+  const isA =
+    currentA === user.uid;
+
+
+  /*
+    自分の役割を表示
+  */
+
+  $("roleTitle").textContent =
+    isA
+      ? "🎭 あなたはA（演じる人）"
+      : "🎯 あなたは回答者";
+
+
+  /*
+    Aの場合
+  */
+
+  if(isA){
 
     $("promptCard")
       .classList
       .remove("hidden");
 
-    $("line").textContent = rd.line;
-
-    $("expr").textContent = rd.expr;
-  }
-
-
-  if(
-    role !== "A" &&
-    rd.performed &&
-    !rd.finished
-  ){
-
-    makeChoices(rd.expr);
-
     $("answerCard")
       .classList
-      .remove("hidden");
+      .add("hidden");
+
+    $("line").textContent =
+      rd.line;
+
+    $("expr").textContent =
+      rd.expr;
+
+
+    if(!rd.performed){
+
+      $("roomMessage").textContent =
+        "お題を確認して表現してください。";
+
+    }else{
+
+      $("roomMessage").textContent =
+        "全員の回答を待っています。";
+
+    }
+
   }
 
 
+  /*
+    A以外の場合
+  */
+
+  if(!isA){
+
+    $("promptCard")
+      .classList
+      .add("hidden");
+
+
+    if(
+      rd.performed &&
+      !rd.finished
+    ){
+
+      makeChoices(rd.expr,rd.performedAt);
+
+
+      $("answerCard")
+        .classList
+        .remove("hidden");
+
+
+      $("roomMessage").textContent =
+        "Aの表現を見て回答してください。";
+
+    }else{
+
+      $("answerCard")
+        .classList
+        .add("hidden");
+
+
+      $("roomMessage").textContent =
+        "Aが表現するのを待っています。";
+
+    }
+
+  }
+
+
+  /*
+    全員の回答が完了したか確認
+  */
+
   if(
-    role === "A" &&
+    isA &&
     rd.performed &&
     !rd.finished
   ){
 
-    const bCount =
-      Object.values(data.players || {})
-        .filter(
-          p => p.online && p.role === "B"
-        ).length;
+    const answerCount =
+      Object.keys(
+        data.answers || {}
+      ).length;
 
-    const aCount =
-      Object.keys(data.answers || {}).length;
+
+    const answerPlayers =
+      players.filter(
+        ([id]) => id !== currentA
+      );
+
 
     if(
-      bCount > 0 &&
-      aCount >= bCount
+      answerPlayers.length > 0 &&
+      answerCount >= answerPlayers.length
     ){
 
       update(
-        ref(db,`rooms/${roomId}/roundData`),
-        {finished:true}
+        ref(
+          db,
+          `rooms/${roomId}/roundData`
+        ),
+        {
+          finished:true
+        }
       );
+
     }
+
   }
 
+
+  /*
+    ラウンド終了
+  */
 
   if(rd.finished){
 
@@ -740,42 +991,45 @@ function sync(data){
       .classList
       .remove("hidden");
 
+    stopTimer();
+
     renderResults(data);
+
   }
+
 }
 
 
 /* -------------------------
    回答選択肢
-   8択
 ------------------------- */
 
-function makeChoices(correct){
+function makeChoices(correct,performedAt){
 
-  if($("choices").dataset.round == round){
+  if(
+    $("choices").dataset.round == round
+  ){
+    startTimer(performedAt);
     return;
   }
 
-  $("choices").dataset.round = round;
+
+  $("choices").dataset.round =
+    round;
 
   answer = "";
 
-  $("sendAnswer").disabled = true;
+  $("sendAnswer").disabled =
+    true;
 
   $("choices").innerHTML = "";
 
 
-  /*
-    正解1つ
-    ＋
-    不正解7つ
-    ＝
-    合計8択
-  */
-
   const wrongAnswers =
     shuffle(
-      exprs.filter(x => x !== correct)
+      exprs.filter(
+        x => x !== correct
+      )
     ).slice(0,7);
 
 
@@ -791,9 +1045,14 @@ function makeChoices(correct){
     const b =
       document.createElement("button");
 
-    b.className = "choice";
 
-    b.textContent = x;
+    b.className =
+      "choice";
+
+
+    b.textContent =
+      x;
+
 
     b.onclick = () => {
 
@@ -803,15 +1062,109 @@ function makeChoices(correct){
           q.classList.remove("selected")
         );
 
+
       b.classList.add("selected");
+
 
       answer = x;
 
-      $("sendAnswer").disabled = false;
+
+      $("sendAnswer").disabled =
+        false;
+
     };
 
-    $("choices").appendChild(b);
+
+    $("choices")
+      .appendChild(b);
+
   });
+
+
+  startTimer(performedAt);
+
+}
+
+
+/* -------------------------
+   タイマー
+------------------------- */
+
+function startTimer(startedAt){
+
+  if(!startedAt){
+    return;
+  }
+
+
+  stopTimer();
+
+
+  function updateTimer(){
+
+    const seconds =
+      (Date.now() - startedAt) / 1000;
+
+
+    $("timer").textContent =
+      seconds.toFixed(1) + "秒";
+
+  }
+
+
+  updateTimer();
+
+
+  timerInterval =
+    setInterval(
+      updateTimer,
+      100
+    );
+
+}
+
+
+function stopTimer(){
+
+  if(timerInterval){
+
+    clearInterval(timerInterval);
+
+    timerInterval = null;
+
+  }
+
+}
+
+
+/* -------------------------
+   得点計算
+------------------------- */
+
+function calculateScore(isCorrect,elapsed){
+
+  if(!isCorrect){
+    return 0;
+  }
+
+
+  if(elapsed <= 5){
+    return 150;
+  }
+
+
+  if(elapsed <= 10){
+    return 130;
+  }
+
+
+  if(elapsed <= 20){
+    return 110;
+  }
+
+
+  return 100;
+
 }
 
 
@@ -821,34 +1174,116 @@ function makeChoices(correct){
 
 function renderResults(data){
 
-  const rd = data.roundData || {};
+  const rd =
+    data.roundData || {};
 
-  const arr =
-    Object.entries(data.answers || {})
+
+  const answers =
+    data.answers || {};
+
+
+  const rows =
+    Object.entries(answers)
       .map(([id,v]) => {
 
-        const p = data.players?.[id];
+        const p =
+          data.players?.[id];
 
-        return p
-          ? `${p.name}：${v.answer}${
-              v.answer === rd.expr
-                ? " ✅"
-                : " ❌"
-            }`
-          : "";
+
+        if(!p){
+          return "";
+        }
+
+
+        const correct =
+          v.answer === rd.expr;
+
+
+        const points =
+          v.points || 0;
+
+
+        const elapsed =
+          v.elapsed || 0;
+
+
+        return `
+          <div class="rank">
+            <span>
+              ${p.name}
+              ${correct ? "✅" : "❌"}
+            </span>
+
+            <span>
+              ${correct ? elapsed.toFixed(1) + "秒 / " : ""}
+              +${points}点
+            </span>
+          </div>
+        `;
+
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .join("");
+
+
+  /*
+    現在の累計スコア順
+  */
+
+  const ranking =
+    Object.entries(
+      data.players || {}
+    )
+    .sort(
+      (a,b) =>
+        (b[1].score || 0) -
+        (a[1].score || 0)
+    )
+    .map(([id,p],index) => {
+
+      return `
+        <div class="rank">
+          <span>
+            ${index + 1}位　${p.name}
+          </span>
+
+          <strong>
+            ${p.score || 0}点
+          </strong>
+        </div>
+      `;
+
+    })
+    .join("");
 
 
   $("result").innerHTML = `
-    <div class="big">
-      正解：${rd.expr}
+
+    <div class="card">
+
+      <div class="muted">
+        今回の正解
+      </div>
+
+      <div class="big">
+        「${rd.expr}」
+      </div>
+
+      ${rows || "<p>回答なし</p>"}
+
     </div>
 
-    <p>
-      ${arr.join("<br>") || "回答なし"}
-    </p>
+
+    <div class="card">
+
+      <h2>🏆 現在の順位</h2>
+
+      ${ranking}
+
+    </div>
+
   `;
+
 }
 
 
@@ -856,38 +1291,60 @@ function renderResults(data){
    ルーム作成
 ------------------------- */
 
-$("create").onclick = async () => {
+$("create").onclick =
+async () => {
 
   try{
 
     const n =
-      $("hostName").value.trim() || "A";
+      $("hostName")
+        .value
+        .trim() || "プレイヤー1";
 
-    const id = code();
+
+    const id =
+      code();
+
 
     await init();
 
+
     await set(
-      ref(db,`rooms/${id}`),
+      ref(
+        db,
+        `rooms/${id}`
+      ),
       {
         created:Date.now(),
+
+        hostUid:user.uid,
+
         roundData:{
           id:0
         }
       }
     );
 
-    await enter(id,n,"A");
+
+    await enter(
+      id,
+      n,
+      true
+    );
+
 
   }catch(error){
 
     console.error(error);
 
+
     alert(
       "ゲームを開始できませんでした。\n" +
       error.message
     );
+
   }
+
 };
 
 
@@ -895,15 +1352,22 @@ $("create").onclick = async () => {
    ルーム参加
 ------------------------- */
 
-$("join").onclick = async () => {
+$("join").onclick =
+async () => {
 
   try{
 
     const id =
-      $("roomInput").value.trim();
+      $("roomInput")
+        .value
+        .trim();
+
 
     const n =
-      $("joinName").value.trim() || "B";
+      $("joinName")
+        .value
+        .trim() ||
+      "プレイヤー";
 
 
     if(!/^\d{4}$/.test(id)){
@@ -916,17 +1380,25 @@ $("join").onclick = async () => {
     }
 
 
-    await enter(id,n,"B");
+    await enter(
+      id,
+      n,
+      false
+    );
+
 
   }catch(error){
 
     console.error(error);
 
+
     alert(
       "ゲームに参加できませんでした。\n" +
       error.message
     );
+
   }
+
 };
 
 
@@ -934,50 +1406,132 @@ $("join").onclick = async () => {
    次のお題
 ------------------------- */
 
-$("startRound").onclick = async () => {
+$("startRound").onclick =
+async () => {
 
   try{
+
+    await init();
+
+
+    const roomSnap =
+      await new Promise(resolve => {
+
+        onValue(
+          ref(db,`rooms/${roomId}`),
+          snap => resolve(snap),
+          {
+            onlyOnce:true
+          }
+        );
+
+      });
+
+
+    const data =
+      roomSnap.val() || {};
+
+
+    const players =
+      getPlayers(data);
+
+
+    if(players.length < 2){
+
+      alert(
+        "2人以上参加してから開始してください。"
+      );
+
+      return;
+    }
+
+
+    /*
+      参加順でAを決定
+
+      1ラウンド目 → 1人目
+      2ラウンド目 → 2人目
+      3ラウンド目 → 3人目
+      ...
+    */
+
+    const nextRound =
+      (data.roundData?.roundNumber || 0) + 1;
+
+
+    const aIndex =
+      (nextRound - 1) %
+      players.length;
+
+
+    const aUid =
+      players[aIndex][0];
+
 
     const line =
       lines[
         Math.floor(
-          Math.random() * lines.length
+          Math.random() *
+          lines.length
         )
       ];
+
 
     const expr =
       exprs[
         Math.floor(
-          Math.random() * exprs.length
+          Math.random() *
+          exprs.length
         )
       ];
 
-    const id = Date.now();
+
+    const roundId =
+      Date.now();
 
 
     await update(
       ref(db,`rooms/${roomId}`),
       {
+
         roundData:{
-          id,
+
+          id:roundId,
+
+          roundNumber:nextRound,
+
+          aUid,
+
           line,
+
           expr,
+
           performed:false,
+
+          performedAt:0,
+
           finished:false
+
         },
+
         answers:{}
+
       }
     );
+
 
   }catch(error){
 
     console.error(error);
 
+
     alert(
       "お題を開始できませんでした。\n" +
       error.message
     );
+
   }
+
 };
 
 
@@ -985,36 +1539,109 @@ $("startRound").onclick = async () => {
    A：表現した
 ------------------------- */
 
-$("performed").onclick = async () => {
+$("performed").onclick =
+async () => {
 
   try{
 
+    const now =
+      Date.now();
+
+
     await update(
-      ref(db,`rooms/${roomId}/roundData`),
+      ref(
+        db,
+        `rooms/${roomId}/roundData`
+      ),
       {
-        performed:true
+        performed:true,
+        performedAt:now
       }
     );
+
 
   }catch(error){
 
     console.error(error);
 
+
     alert(
       "処理に失敗しました。\n" +
       error.message
     );
+
   }
+
 };
 
 
 /* -------------------------
-   B：回答
+   回答
 ------------------------- */
 
-$("sendAnswer").onclick = async () => {
+$("sendAnswer").onclick =
+async () => {
 
   try{
+
+    if(!answer){
+      return;
+    }
+
+
+    const roomRef =
+      ref(
+        db,
+        `rooms/${roomId}`
+      );
+
+
+    /*
+      現在のお題を取得
+    */
+
+    const snap =
+      await new Promise(resolve => {
+
+        onValue(
+          roomRef,
+          s => resolve(s),
+          {
+            onlyOnce:true
+          }
+        );
+
+      });
+
+
+    const data =
+      snap.val() || {};
+
+
+    const rd =
+      data.roundData || {};
+
+
+    const elapsed =
+      rd.performedAt
+        ? (Date.now() - rd.performedAt) / 1000
+        : 999;
+
+
+    const correct =
+      answer === rd.expr;
+
+
+    const points =
+      calculateScore(
+        correct,
+        elapsed
+      );
+
+
+    /*
+      回答を保存
+    */
 
     await set(
       ref(
@@ -1022,32 +1649,61 @@ $("sendAnswer").onclick = async () => {
         `rooms/${roomId}/answers/${user.uid}`
       ),
       {
-        answer
+
+        answer,
+
+        correct,
+
+        elapsed,
+
+        points
+
       }
     );
+
+
+    /*
+      累計スコアを安全に加算
+    */
+
+    if(points > 0){
+
+      await runTransaction(
+        ref(
+          db,
+          `rooms/${roomId}/players/${user.uid}/score`
+        ),
+        current =>
+          (current || 0) + points
+      );
+
+    }
+
+
+    stopTimer();
+
 
     $("answerCard")
       .classList
       .add("hidden");
 
+
+    $("roomMessage").textContent =
+      `回答しました！ ${points}点`;
+
+
   }catch(error){
 
     console.error(error);
+
 
     alert(
       "回答を送信できませんでした。\n" +
       error.message
     );
+
   }
-};
 
-
-/* -------------------------
-   ホームへ
-------------------------- */
-
-$("backHome").onclick = () => {
-  location.reload();
 };
 
 
