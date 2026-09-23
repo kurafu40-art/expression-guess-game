@@ -182,6 +182,34 @@ input{
   padding:12px 0;
   border-bottom:1px solid #eee;
 }
+
+.b-info{
+  background:#f7f7f8;
+  border-radius:14px;
+  padding:16px;
+  margin-top:14px;
+}
+
+.b-line{
+  font-size:28px;
+  font-weight:800;
+  text-align:center;
+  line-height:1.4;
+  margin:18px 0;
+}
+
+.performer-bonus{
+  background:#f4f4f5;
+  border-radius:14px;
+  padding:16px;
+  margin:18px 0;
+}
+
+.bonus-points{
+  font-size:24px;
+  font-weight:800;
+  margin-top:8px;
+}
 </style>
 </head>
 
@@ -208,6 +236,9 @@ input{
 <br><br>
 正答者にはポイントを付与し、
 回答までの時間が短ければさらにボーナスが付きます。
+<br><br>
+さらに、回答者が正解すると
+正解者1人につき表現者にも50ポイントが入ります。
 </p>
 
 </div>
@@ -365,14 +396,12 @@ Aだけ見る
 
 </div>
 
-
 <button
   id="performed"
   class="primary"
 >
 表現した！
 </button>
-
 
 <button
   id="skipRound"
@@ -386,7 +415,48 @@ Aをスキップ
 
 
 <!-- ==========================================
-     B
+     B：今回のお題
+========================================== -->
+
+<div
+  class="card hidden"
+  id="bInfoCard"
+>
+
+<span class="badge">
+今回のお題
+</span>
+
+<div class="b-info">
+
+<div>
+今回の表現者：
+<strong id="performerName"></strong>
+</div>
+
+<div
+  class="muted"
+  style="margin-top:14px"
+>
+表現者が言うセリフ
+</div>
+
+<div
+  id="bLine"
+  class="b-line"
+></div>
+
+</div>
+
+<p class="muted center">
+このセリフを、Aがどんな表現で演じるか見てください。
+</p>
+
+</div>
+
+
+<!-- ==========================================
+     B：回答
 ========================================== -->
 
 <div
@@ -978,7 +1048,7 @@ function show(id){
 
 
 /* ==========================================
-   コード生成
+   ルームコード
 ========================================== */
 
 function code(){
@@ -1004,8 +1074,7 @@ function shuffle(array){
 
 
   for(
-    let i =
-      copy.length - 1;
+    let i = copy.length - 1;
     i > 0;
     i--
   ){
@@ -1219,7 +1288,7 @@ $("addExpr").onclick = () => {
 
 
 /* ==========================================
-   プレイヤー
+   プレイヤー取得
 ========================================== */
 
 function getPlayers(data){
@@ -1496,6 +1565,10 @@ async function applyRoundScores(
       );
 
 
+    /* ======================================
+       Bの得点
+    ====================================== */
+
     for(
       const [playerId,value]
       of currentAnswers
@@ -1556,7 +1629,10 @@ async function applyRoundScores(
 
             scoreRounds:{
               ...scoreRounds,
-              [roundKey]:points
+
+              [roundKey]:
+                points
+
             }
 
           };
@@ -1567,6 +1643,98 @@ async function applyRoundScores(
     }
 
 
+    /* ======================================
+       正解者数
+    ====================================== */
+
+    const correctCount =
+      currentAnswers.filter(
+        ([playerId,value]) =>
+          value.answer === rd.expr
+      ).length;
+
+
+    /* ======================================
+       Aの表現者ボーナス
+
+       正解者1人 × 50点
+    ====================================== */
+
+    const performerPoints =
+      correctCount * 50;
+
+
+    if(rd.aUid){
+
+      const performerRef =
+        ref(
+          db,
+          `rooms/${roomId}/players/${rd.aUid}`
+        );
+
+
+      await runTransaction(
+        performerRef,
+        currentPlayer => {
+
+          if(!currentPlayer){
+            return currentPlayer;
+          }
+
+
+          const scoreRounds =
+            currentPlayer.scoreRounds ||
+            {};
+
+
+          const performerRoundKey =
+            `performer_${rd.id}`;
+
+
+          /*
+            同じラウンドで二重加算しない
+          */
+
+          if(
+            Object.prototype.hasOwnProperty.call(
+              scoreRounds,
+              performerRoundKey
+            )
+          ){
+            return currentPlayer;
+          }
+
+
+          return {
+
+            ...currentPlayer,
+
+            score:
+              Number(
+                currentPlayer.score || 0
+              ) +
+              performerPoints,
+
+            scoreRounds:{
+              ...scoreRounds,
+
+              [performerRoundKey]:
+                performerPoints
+
+            }
+
+          };
+
+        }
+      );
+
+    }
+
+
+    /* ======================================
+       ラウンド終了
+    ====================================== */
+
     await update(
       ref(
         db,
@@ -1574,9 +1742,20 @@ async function applyRoundScores(
       ),
       {
 
-        scoresApplied:true,
-        finished:true,
-        finishedAt:Date.now()
+        scoresApplied:
+          true,
+
+        finished:
+          true,
+
+        finishedAt:
+          Date.now(),
+
+        correctCount:
+          correctCount,
+
+        performerPoints:
+          performerPoints
 
       }
     );
@@ -1591,7 +1770,8 @@ async function applyRoundScores(
 
   }finally{
 
-    settlingRoundId = null;
+    settlingRoundId =
+      null;
 
   }
 
@@ -1655,17 +1835,26 @@ async function sync(data){
 
     stopTimer();
 
+
     $("promptCard")
       .classList
       .add("hidden");
+
+
+    $("bInfoCard")
+      .classList
+      .add("hidden");
+
 
     $("answerCard")
       .classList
       .add("hidden");
 
+
     $("resultCard")
       .classList
       .add("hidden");
+
 
     $("skipRound")
       .classList
@@ -1728,6 +1917,11 @@ async function sync(data){
       .add("hidden");
 
 
+    $("bInfoCard")
+      .classList
+      .add("hidden");
+
+
     $("answerCard")
       .classList
       .add("hidden");
@@ -1743,10 +1937,6 @@ async function sync(data){
       .remove("hidden");
 
 
-    /*
-      スキップ
-    */
-
     if(rd.skipped){
 
       renderSkippedResult(
@@ -1761,16 +1951,6 @@ async function sync(data){
 
     }
 
-
-    /*
-      次のラウンドを開始する人。
-
-      通常終了：
-      今回のA
-
-      スキップ：
-      次のA
-    */
 
     const nextStarterUid =
       rd.skipped
@@ -1871,6 +2051,11 @@ async function sync(data){
       .remove("hidden");
 
 
+    $("bInfoCard")
+      .classList
+      .add("hidden");
+
+
     $("answerCard")
       .classList
       .add("hidden");
@@ -1888,11 +2073,13 @@ async function sync(data){
 
     if(rd.performed){
 
-      performedLocked = true;
+      performedLocked =
+        true;
 
 
       $("performed")
-        .disabled = true;
+        .disabled =
+        true;
 
 
       $("performed")
@@ -1906,7 +2093,7 @@ async function sync(data){
 
 
       /*
-        表現後はスキップ不可。
+        回答開始後のスキップは禁止
       */
 
       $("skipRound")
@@ -1920,11 +2107,13 @@ async function sync(data){
 
     }else{
 
-      performedLocked = false;
+      performedLocked =
+        false;
 
 
       $("performed")
-        .disabled = false;
+        .disabled =
+        false;
 
 
       $("performed")
@@ -1943,7 +2132,8 @@ async function sync(data){
 
 
       $("skipRound")
-        .disabled = false;
+        .disabled =
+        false;
 
 
       $("roomMessage")
@@ -1976,6 +2166,35 @@ async function sync(data){
       .add("hidden");
 
 
+    /*
+      表現者情報
+    */
+
+    const performer =
+      data.players?.[rd.aUid];
+
+
+    $("performerName")
+      .textContent =
+        performer?.name ||
+        "表現者";
+
+
+    $("bLine")
+      .textContent =
+        `「${rd.line || ""}」`;
+
+
+    /*
+      Bにはラウンド中ずっと
+      表現者とセリフを表示
+    */
+
+    $("bInfoCard")
+      .classList
+      .remove("hidden");
+
+
     const myAnswer =
       data.answers?.[user.uid];
 
@@ -1984,6 +2203,10 @@ async function sync(data){
       myAnswer &&
       myAnswer.roundId === rd.id;
 
+
+    /* --------------------------------------
+       回答済み
+    -------------------------------------- */
 
     if(alreadyAnswered){
 
@@ -2006,6 +2229,10 @@ async function sync(data){
     }
 
 
+    /* --------------------------------------
+       ローカル上で回答済み
+    -------------------------------------- */
+
     else if(
       answerSubmittedRound === rd.id
     ){
@@ -2024,6 +2251,10 @@ async function sync(data){
 
     }
 
+
+    /* --------------------------------------
+       Aが表現済み
+    -------------------------------------- */
 
     else if(rd.performed){
 
@@ -2046,6 +2277,10 @@ async function sync(data){
     }
 
 
+    /* --------------------------------------
+       Aがまだ表現していない
+    -------------------------------------- */
+
     else{
 
       stopTimer();
@@ -2058,7 +2293,7 @@ async function sync(data){
 
       $("roomMessage")
         .textContent =
-          "Aが表現するのを待っています。";
+          "上のセリフを確認して、Aが表現するのを待ってください。";
 
     }
 
@@ -2297,7 +2532,8 @@ function stopTimer(){
       timerInterval
     );
 
-    timerInterval = null;
+    timerInterval =
+      null;
 
   }
 
@@ -2305,7 +2541,7 @@ function stopTimer(){
 
 
 /* ==========================================
-   得点
+   B得点計算
 ========================================== */
 
 function calculateScore(
@@ -2339,7 +2575,7 @@ function calculateScore(
 
 
 /* ==========================================
-   ランキングHTML
+   ランキング
 ========================================== */
 
 function makeRanking(
@@ -2401,6 +2637,22 @@ function renderResults(data){
 
   const answers =
     data.answers || {};
+
+
+  const performer =
+    data.players?.[rd.aUid];
+
+
+  const correctCount =
+    Number(
+      rd.correctCount || 0
+    );
+
+
+  const performerPoints =
+    Number(
+      rd.performerPoints || 0
+    );
 
 
   const currentAnswers =
@@ -2558,6 +2810,43 @@ function renderResults(data){
       </div>
 
 
+      <div class="performer-bonus">
+
+        <div>
+          🎭 表現者：
+          <strong>
+            ${escapeHtml(
+              performer?.name ||
+              "A"
+            )}
+          </strong>
+        </div>
+
+        <div style="margin-top:8px">
+          正解者：
+          <strong>
+            ${correctCount}人
+          </strong>
+        </div>
+
+        <div style="margin-top:8px">
+          表現者ボーナス
+        </div>
+
+        <div class="bonus-points">
+          +${performerPoints}点
+        </div>
+
+        <div
+          class="muted"
+          style="margin-top:6px"
+        >
+          正解者1人につき50点
+        </div>
+
+      </div>
+
+
       ${
         answerRows ||
         `
@@ -2703,11 +2992,8 @@ async () => {
     await init();
 
 
-    /*
-      コード重複をなるべく避ける
-    */
-
-    let id = null;
+    let id =
+      null;
 
 
     for(
@@ -2802,7 +3088,7 @@ async () => {
 
 
 /* ==========================================
-   参加
+   ゲーム参加
 ========================================== */
 
 $("join").onclick =
@@ -2925,12 +3211,13 @@ async () => {
       rd.id || 0;
 
 
-    let newAUid = null;
+    let newAUid =
+      null;
 
 
-    /*
-      最初のラウンド
-    */
+    /* --------------------------------------
+       最初のラウンド
+    -------------------------------------- */
 
     if(!currentRoundId){
 
@@ -2953,9 +3240,9 @@ async () => {
     }
 
 
-    /*
-      2ラウンド目以降
-    */
+    /* --------------------------------------
+       2ラウンド目以降
+    -------------------------------------- */
 
     else{
 
@@ -2976,13 +3263,6 @@ async () => {
           rd.aUid
         );
 
-
-      /*
-        スキップ時は次のA本人が開始。
-
-        通常終了時は前回Aが
-        次のお題を開始。
-      */
 
       const allowedStarterUid =
         rd.skipped
@@ -3005,10 +3285,6 @@ async () => {
 
       }
 
-
-      /*
-        新しいAは必ず前回Aの次。
-      */
 
       newAUid =
         nextAUid;
@@ -3091,6 +3367,12 @@ async () => {
 
           skipped:
             false,
+
+          correctCount:
+            0,
+
+          performerPoints:
+            0,
 
           startedAt:
             Date.now()
@@ -3234,9 +3516,7 @@ async () => {
 
 
     if(rd.performed){
-
       return;
-
     }
 
 
@@ -3247,8 +3527,11 @@ async () => {
       ),
       {
 
-        performed:true,
-        performedAt:Date.now()
+        performed:
+          true,
+
+        performedAt:
+          Date.now()
 
       }
     );
@@ -3358,7 +3641,8 @@ async () => {
 
 
     /*
-      表現した後はスキップ不可。
+      表現後は回答が始まっているため
+      スキップ不可
     */
 
     if(rd.performed){
@@ -3379,10 +3663,23 @@ async () => {
       ),
       {
 
-        skipped:true,
-        finished:true,
-        scoresApplied:true,
-        skippedAt:Date.now()
+        skipped:
+          true,
+
+        finished:
+          true,
+
+        scoresApplied:
+          true,
+
+        correctCount:
+          0,
+
+        performerPoints:
+          0,
+
+        skippedAt:
+          Date.now()
 
       }
     );
@@ -3576,7 +3873,8 @@ async () => {
         "回答を受け付けました。全員の回答を待っています。";
 
 
-    answer = "";
+    answer =
+      "";
 
 
   }catch(error){
@@ -3602,7 +3900,7 @@ async () => {
 
 
 /* ==========================================
-   Firebase初期接続確認
+   Firebase初期化
 ========================================== */
 
 init()
