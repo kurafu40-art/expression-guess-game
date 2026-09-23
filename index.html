@@ -385,7 +385,7 @@ const $ = id =>
 
 
 /* ==================================================
-   セリフ50種類
+   セリフ
 ================================================== */
 
 const defaultLines = [
@@ -444,7 +444,7 @@ const defaultLines = [
 
 
 /* ==================================================
-   表現50種類
+   表現
 ================================================== */
 
 const defaultExpr = [
@@ -579,13 +579,14 @@ let timerInterval;
 
 let currentAnswerRound = null;
 
+let performedLocked = false;
+
 
 /*
-  Aが「表現した！」を押した直後、
-  ローカルでもボタンをロックする
+  回答送信済みラウンド
 */
 
-let performedLocked = false;
+let answerSubmittedRound = null;
 
 
 /* ==================================================
@@ -963,37 +964,6 @@ async function enter(
 
 
 /* ==================================================
-   Aを決定
-================================================== */
-
-function getCurrentA(data){
-
-  const players =
-    getPlayers(data);
-
-
-  if(!players.length){
-
-    return null;
-
-  }
-
-
-  const roundNumber =
-    data.roundData?.roundNumber || 1;
-
-
-  const index =
-    (roundNumber - 1) %
-    players.length;
-
-
-  return players[index]?.[0] || null;
-
-}
-
-
-/* ==================================================
    ゲーム同期
 ================================================== */
 
@@ -1064,10 +1034,6 @@ function sync(data){
   }
 
 
-  /*
-    今回のA
-  */
-
   const currentA =
     rd.aUid;
 
@@ -1077,9 +1043,18 @@ function sync(data){
 
 
   /*
-    ラウンドが変わったら
-    Aボタンのロックを解除
+    新しいラウンドになったら
+    ロックを解除
   */
+
+  if(
+    currentAnswerRound !== rd.id
+  ){
+
+    answerSubmittedRound = null;
+
+  }
+
 
   if(
     performedLocked &&
@@ -1119,10 +1094,6 @@ function sync(data){
       .textContent =
         rd.expr;
 
-
-    /*
-      既に表現済みならボタンを無効化
-    */
 
     if(rd.performed){
 
@@ -1183,10 +1154,6 @@ function sync(data){
       .classList.add("hidden");
 
 
-    /*
-      既に自分が回答済みか確認
-    */
-
     const myAnswer =
       data.answers?.[user.uid];
 
@@ -1197,9 +1164,46 @@ function sync(data){
 
 
     if(
+      alreadyAnswered
+    ){
+
+      answerSubmittedRound =
+        rd.id;
+
+
+      $("answerCard")
+        .classList.add("hidden");
+
+
+      stopTimer();
+
+
+      $("roomMessage")
+        .textContent =
+          `回答済み！ ${
+            myAnswer.points || 0
+          }点`;
+
+    }
+
+
+    else if(
+      answerSubmittedRound === rd.id
+    ){
+
+      $("answerCard")
+        .classList.add("hidden");
+
+
+      stopTimer();
+
+
+    }
+
+
+    else if(
       rd.performed &&
-      !rd.finished &&
-      !alreadyAnswered
+      !rd.finished
     ){
 
       makeChoices(
@@ -1216,22 +1220,6 @@ function sync(data){
       $("roomMessage")
         .textContent =
           "Aの表現を見て回答してください。";
-
-    }
-
-
-    else if(alreadyAnswered){
-
-      $("answerCard")
-        .classList.add("hidden");
-
-
-      stopTimer();
-
-
-      $("roomMessage")
-        .textContent =
-          `回答済み！ ${myAnswer.points || 0}点`;
 
     }
 
@@ -1266,6 +1254,7 @@ function sync(data){
         data.answers || {}
       ).filter(
         id =>
+          id !== currentA &&
           data.answers[id]?.roundId === rd.id
       ).length;
 
@@ -1337,6 +1326,20 @@ function makeChoices(
 ){
 
   /*
+    すでに回答済みなら
+    選択肢を表示しない
+  */
+
+  if(
+    answerSubmittedRound === roundId
+  ){
+
+    return;
+
+  }
+
+
+  /*
     同じラウンドでは
     選択肢を作り直さない
   */
@@ -1368,13 +1371,6 @@ function makeChoices(
   $("choices")
     .innerHTML = "";
 
-
-  /*
-    正解1
-    ＋
-    不正解7
-    ＝8択
-  */
 
   const wrongAnswers =
     shuffle(
@@ -1411,21 +1407,24 @@ function makeChoices(
     b.onclick = () => {
 
       /*
-        既に回答済みなら
-        選択不可
+        ここが今回の重要修正。
+
+        「回答する」ボタンがdisabledでも、
+        選択肢は普通に押せるようにする。
       */
 
       if(
-        $("sendAnswer").disabled === true &&
-        !answer
+        answerSubmittedRound === roundId
       ){
+
         return;
+
       }
 
 
       document
         .querySelectorAll(
-          ".choice"
+          "#choices .choice"
         )
         .forEach(q =>
           q.classList
@@ -1649,10 +1648,6 @@ function renderResults(data){
     .join("");
 
 
-  /*
-    累計ランキング
-  */
-
   const ranking =
     Object.entries(
       data.players || {}
@@ -1860,10 +1855,6 @@ async () => {
     await init();
 
 
-    /*
-      現在のルーム情報を取得
-    */
-
     const snap =
       await get(
         ref(
@@ -1894,10 +1885,6 @@ async () => {
     }
 
 
-    /*
-      次のラウンド番号
-    */
-
     const nextRound =
       (
         data.roundData
@@ -1907,11 +1894,6 @@ async () => {
 
     /*
       Aを参加順で決定
-
-      1R → 1人目
-      2R → 2人目
-      3R → 3人目
-      ...
     */
 
     const aIndex =
@@ -1948,8 +1930,7 @@ async () => {
 
 
     /*
-      新しいラウンドなので
-      回答を完全にリセット
+      新しいラウンド
     */
 
     await update(
@@ -1994,12 +1975,14 @@ async () => {
 
 
     /*
-      画面側もリセット
+      ローカル状態もリセット
     */
 
     performedLocked = false;
 
     currentAnswerRound = null;
+
+    answerSubmittedRound = null;
 
     answer = "";
 
@@ -2015,6 +1998,10 @@ async () => {
     $("performed")
       .textContent =
         "表現した！";
+
+
+    $("sendAnswer")
+      .disabled = true;
 
 
   }catch(error){
@@ -2041,20 +2028,12 @@ async () => {
 
   try{
 
-    /*
-      ローカル側で二重クリックを防止
-    */
-
     if(performedLocked){
 
       return;
 
     }
 
-
-    /*
-      先にロック
-    */
 
     performedLocked = true;
 
@@ -2072,10 +2051,6 @@ async () => {
         "表現済み";
 
 
-    /*
-      現在のラウンドを取得
-    */
-
     const snap =
       await get(
         ref(
@@ -2089,20 +2064,12 @@ async () => {
       snap.val() || {};
 
 
-    /*
-      すでに表現済みなら終了
-    */
-
     if(rd.performed){
 
       return;
 
     }
 
-
-    /*
-      自分が本当にAか確認
-    */
 
     if(
       rd.aUid !== user.uid
@@ -2116,10 +2083,6 @@ async () => {
     const now =
       Date.now();
 
-
-    /*
-      表現開始時間を保存
-    */
 
     await update(
       ref(
@@ -2142,11 +2105,6 @@ async () => {
 
     console.error(error);
 
-
-    /*
-      エラーの場合だけ
-      再度押せるように戻す
-    */
 
     performedLocked = false;
 
@@ -2183,6 +2141,10 @@ async () => {
 
   try{
 
+    /*
+      選択肢未選択なら送信しない
+    */
+
     if(!answer){
 
       return;
@@ -2191,7 +2153,17 @@ async () => {
 
 
     /*
-      現在のラウンドを取得
+      送信ボタンを即座に無効化
+
+      連打防止
+    */
+
+    $("sendAnswer")
+      .disabled = true;
+
+
+    /*
+      現在のルーム情報
     */
 
     const snap =
@@ -2212,8 +2184,7 @@ async () => {
 
 
     /*
-      すでにこのラウンドで
-      回答済みなら終了
+      すでに回答済みなら終了
     */
 
     const existingAnswer =
@@ -2224,6 +2195,10 @@ async () => {
       existingAnswer &&
       existingAnswer.roundId === rd.id
     ){
+
+      answerSubmittedRound =
+        rd.id;
+
 
       $("answerCard")
         .classList.add("hidden");
@@ -2245,7 +2220,7 @@ async () => {
 
 
     /*
-      Aは回答できない
+      Aは回答不可
     */
 
     if(
@@ -2258,10 +2233,13 @@ async () => {
 
 
     /*
-      表現済みでなければ回答不可
+      表現前は回答不可
     */
 
     if(!rd.performed){
+
+      $("sendAnswer")
+        .disabled = false;
 
       return;
 
@@ -2301,7 +2279,7 @@ async () => {
 
 
     /*
-      回答を保存
+      回答保存
     */
 
     await set(
@@ -2331,10 +2309,7 @@ async () => {
 
 
     /*
-      累計得点を加算
-
-      Transactionを使用することで
-      同時アクセスでも比較的安全に加算
+      正解なら得点加算
     */
 
     if(points > 0){
@@ -2353,8 +2328,12 @@ async () => {
 
 
     /*
-      回答済みとして画面をロック
+      回答済み
     */
+
+    answerSubmittedRound =
+      rd.id;
+
 
     stopTimer();
 
@@ -2368,20 +2347,20 @@ async () => {
         `回答済み！ ${points}点`;
 
 
-    /*
-      再送信防止
-    */
-
-    $("sendAnswer")
-      .disabled = true;
-
-
     answer = "";
 
 
   }catch(error){
 
     console.error(error);
+
+
+    /*
+      エラーなら再送信可能に戻す
+    */
+
+    $("sendAnswer")
+      .disabled = false;
 
 
     alert(
