@@ -1,24 +1,39 @@
 <!doctype html>
 <html lang="ja">
+
 <head>
+
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+>
+
 <title>表現当てゲーム</title>
 
+
 <style>
-*{box-sizing:border-box}
+
+*{
+  box-sizing:border-box;
+}
 
 body{
   margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Noto Sans JP",
+    sans-serif;
   background:#f4f4f5;
-  color:#222
+  color:#222;
 }
 
 main{
   max-width:680px;
   margin:auto;
-  padding:16px
+  padding:16px;
 }
 
 .card{
@@ -26,16 +41,17 @@ main{
   border-radius:18px;
   padding:20px;
   margin:12px 0;
-  box-shadow:0 2px 12px #0001
+  box-shadow:0 2px 12px #0001;
 }
 
-h1,h2{
-  margin:0 0 12px
+h1,
+h2{
+  margin:0 0 12px;
 }
 
 .muted{
   color:#777;
-  font-size:14px
+  font-size:14px;
 }
 
 .big{
@@ -43,11 +59,12 @@ h1,h2{
   font-weight:800;
   text-align:center;
   line-height:1.4;
-  margin:22px 0
+  margin:22px 0;
 }
 
-button,input{
-  font:inherit
+button,
+input{
+  font:inherit;
 }
 
 button{
@@ -55,62 +72,61 @@ button{
   border:0;
   border-radius:12px;
   padding:10px 15px;
-  font-weight:700
+  font-weight:700;
 }
 
 button:disabled{
   opacity:.55;
-  cursor:not-allowed
+  cursor:not-allowed;
 }
 
 .primary{
   background:#222;
   color:#fff;
-  width:100%
+  width:100%;
 }
 
 .secondary{
-  background:#eee
+  background:#eee;
 }
 
 .danger{
   background:#f3dddd;
-  color:#a00
+  color:#a00;
 }
 
 input{
   width:100%;
   padding:12px;
   border:1px solid #ddd;
-  border-radius:10px
+  border-radius:10px;
 }
 
 .row{
   display:flex;
-  gap:8px
+  gap:8px;
 }
 
 .row>*{
-  min-width:0
+  min-width:0;
 }
 
 .row input{
-  flex:1
+  flex:1;
 }
 
 .hidden{
-  display:none!important
+  display:none!important;
 }
 
-.choice{
-  width:100%;
-  text-align:left;
-  background:#f1f1f1;
-  margin:5px 0
+.center{
+  text-align:center;
 }
 
-.choice.selected{
-  outline:3px solid #555
+.score{
+  font-size:24px;
+  font-weight:800;
+  margin:10px 0;
 }
 
 .list{
@@ -118,7 +134,7 @@ input{
   border-bottom:1px solid #eee;
   display:flex;
   justify-content:space-between;
-  gap:8px
+  gap:8px;
 }
 
 .badge{
@@ -126,258 +142,321 @@ input{
   background:#eee;
   border-radius:99px;
   padding:5px 9px;
-  font-size:12px
+  font-size:12px;
 }
 
-.center{
-  text-align:center
+.choice{
+  width:100%;
+  text-align:left;
+  background:#f1f1f1;
+  margin:5px 0;
 }
 
-.score{
-  font-size:24px;
-  font-weight:800;
-  margin:10px 0
+.choice.selected{
+  outline:3px solid #555;
 }
 
 .rank{
   padding:10px 0;
   border-bottom:1px solid #eee;
   display:flex;
-  justify-content:space-between
+  justify-content:space-between;
+  gap:8px;
 }
 
 .timer{
   font-size:18px;
   font-weight:700;
   text-align:center;
-  margin:10px 0
+  margin:10px 0;
 }
 
 .done{
   background:#eee;
-  color:#555
+  color:#555;
 }
+
+.waiting{
+  text-align:center;
+  padding:20px 5px;
+  font-weight:700;
+}
+
+.correct{
+  font-weight:700;
+}
+
+.wrong{
+  font-weight:700;
+}
+
+.result-answer{
+  padding:12px 0;
+  border-bottom:1px solid #eee;
+}
+
 </style>
+
 </head>
+
 
 <body>
 
+
 <main>
 
-<div class="card">
 
-  <h1>🎭 表現当てゲーム</h1>
-
-  <p class="muted">
-    1人(表現者)がセリフを指定された表現で演じ、
-    その人以外の全員が「どんな表現だったか」を当てます。
-    表現者はラウンドごとに順番に交代します。
-    正答者にはポイントを付与、回答までの時間が短ければ
-    さらにボーナスでポイントが付与されます。
-  </p>
-
-</div>
-
+<!-- ==================================================
+     HOME
+================================================== -->
 
 <section id="home">
 
+
 <div class="card">
 
-  <h2>ゲームを作る</h2>
+<h1>
+🎭 表現当てゲーム
+</h1>
 
-  <input
-    id="hostName"
-    placeholder="あなたの名前"
-  >
+<p class="muted">
 
-  <button
-    id="create"
-    class="primary"
-    style="margin-top:10px"
-  >
-    ルームを作成
-  </button>
+1人(表現者)がセリフを指定された表現で演じ、
+その人以外の全員が「どんな表現だったか」を当てます。
+
+表現者はラウンドごとに順番に交代します。
+
+正答者にはポイントを付与し、
+回答までの時間が短ければさらにボーナスが付きます。
+
+</p>
 
 </div>
 
 
 <div class="card">
 
-  <h2>ゲームに参加</h2>
+<h2>
+ゲームを作る
+</h2>
 
-  <input
-    id="roomInput"
-    placeholder="4桁の参加コード"
-  >
+<input
+  id="hostName"
+  placeholder="あなたの名前"
+>
 
-  <input
-    id="joinName"
-    placeholder="名前"
-    style="margin-top:8px"
-  >
-
-  <button
-    id="join"
-    class="primary"
-    style="margin-top:10px"
-  >
-    参加する
-  </button>
+<button
+  id="create"
+  class="primary"
+  style="margin-top:10px"
+>
+ゲームを作成
+</button>
 
 </div>
 
 
 <div class="card">
 
-  <button
-    id="editorOpen"
-    class="secondary"
-    style="width:100%"
-  >
-    セリフ・表現を編集
-  </button>
+<h2>
+ゲームに参加
+</h2>
+
+<input
+  id="roomInput"
+  placeholder="4桁の参加コード"
+>
+
+<input
+  id="joinName"
+  placeholder="名前"
+  style="margin-top:8px"
+>
+
+<button
+  id="join"
+  class="primary"
+  style="margin-top:10px"
+>
+参加する
+</button>
 
 </div>
+
+
+<div class="card">
+
+<button
+  id="editorOpen"
+  class="secondary"
+  style="width:100%"
+>
+セリフ・表現を編集
+</button>
+
+</div>
+
 
 </section>
 
 
-<section id="room" class="hidden">
+<!-- ==================================================
+     ROOM
+================================================== -->
+
+<section
+  id="room"
+  class="hidden"
+>
 
 
 <div class="card center">
 
-  <span class="badge">
-    参加コード
-  </span>
+<span class="badge">
+参加コード
+</span>
 
-  <div
-    class="big"
-    id="roomCode"
-  ></div>
+<div
+  class="big"
+  id="roomCode"
+></div>
 
-  <p id="players"></p>
+<p id="players"></p>
 
-  <div class="score">
+<div class="score">
 
-    あなたの得点：
+あなたの得点：
 
-    <span id="myScore">
-      0
-    </span>点
+<span id="myScore">
+0
+</span>
 
-  </div>
+点
+
+</div>
 
 </div>
 
 
-<!--
-  ゲーム開始前：
-  ゲーム作成者が使用
-
-  ラウンド開始後：
-  そのラウンドの表現者が使用
--->
+<!-- 次のお題 -->
 
 <div
   class="card hidden"
   id="hostControls"
 >
 
-  <button
-    id="startRound"
-    class="primary"
-  >
-    次のお題を開始
-  </button>
+<button
+  id="startRound"
+  class="primary"
+>
+次のお題を開始
+</button>
 
 </div>
 
+
+<!-- 役割 -->
 
 <div class="card">
 
-  <h2 id="roleTitle"></h2>
+<h2 id="roleTitle">
+</h2>
 
-  <div
-    id="roomMessage"
-    class="muted"
-  ></div>
+<div
+  id="roomMessage"
+  class="muted"
+></div>
 
 </div>
 
 
-<!-- A -->
+<!-- ==================================================
+     A
+================================================== -->
 
 <div
   class="card hidden"
   id="promptCard"
 >
 
-  <span class="badge">
-    Aだけ見る
-  </span>
+<span class="badge">
+Aだけ見る
+</span>
 
-  <div class="big">
 
-    「<span id="line"></span>」を<br>
+<div class="big">
 
-    「<span id="expr"></span>」で表現！
+「<span id="line"></span>」を<br>
 
-  </div>
-
-  <button
-    id="performed"
-    class="primary"
-  >
-    表現した！
-  </button>
+「<span id="expr"></span>」で表現！
 
 </div>
 
 
-<!-- B -->
+<button
+  id="performed"
+  class="primary"
+>
+表現した！
+</button>
+
+</div>
+
+
+<!-- ==================================================
+     B
+================================================== -->
 
 <div
   class="card hidden"
   id="answerCard"
 >
 
-  <h2>回答</h2>
+<h2>
+回答
+</h2>
 
-  <p class="muted">
-    Aはどんな表現をしていましたか？
-  </p>
+<p class="muted">
+Aはどんな表現をしていましたか？
+</p>
 
-  <div
-    id="timer"
-    class="timer"
-  >
-    0.0秒
-  </div>
 
-  <div id="choices"></div>
+<div
+  id="timer"
+  class="timer"
+>
+0.0秒
+</div>
 
-  <button
-    id="sendAnswer"
-    class="primary"
-    disabled
-  >
-    回答する
-  </button>
+
+<div id="choices"></div>
+
+
+<button
+  id="sendAnswer"
+  class="primary"
+  disabled
+>
+回答する
+</button>
 
 </div>
 
 
-<!-- 結果 -->
+<!-- ==================================================
+     結果
+================================================== -->
 
 <div
   class="card hidden"
   id="resultCard"
 >
 
-  <h2>結果</h2>
+<h2>
+結果
+</h2>
 
-  <div id="result"></div>
+<div id="result"></div>
 
 </div>
 
@@ -385,70 +464,83 @@ input{
 </section>
 
 
-<!-- 編集 -->
+<!-- ==================================================
+     EDITOR
+================================================== -->
 
 <section
   id="editor"
   class="hidden"
 >
 
+
 <div class="card">
 
-  <h2>セリフ</h2>
+<h2>
+セリフ
+</h2>
 
-  <div class="row">
 
-    <input
-      id="newLine"
-      placeholder="例：好き"
-    >
+<div class="row">
 
-    <button id="addLine">
-      追加
-    </button>
+<input
+  id="newLine"
+  placeholder="例：好き"
+>
 
-  </div>
+<button id="addLine">
+追加
+</button>
 
-  <div id="lineList"></div>
+</div>
+
+
+<div id="lineList"></div>
 
 </div>
 
 
 <div class="card">
 
-  <h2>表現</h2>
+<h2>
+表現
+</h2>
 
-  <div class="row">
 
-    <input
-      id="newExpr"
-      placeholder="例：照れて"
-    >
+<div class="row">
 
-    <button id="addExpr">
-      追加
-    </button>
+<input
+  id="newExpr"
+  placeholder="例：照れて"
+>
 
-  </div>
+<button id="addExpr">
+追加
+</button>
 
-  <div id="exprList"></div>
+</div>
+
+
+<div id="exprList"></div>
 
 </div>
 
 
 <div class="card">
 
-  <button
-    id="editorBack"
-    class="secondary"
-    style="width:100%"
-  >
-    戻る
-  </button>
+<button
+  id="editorBack"
+  class="secondary"
+  style="width:100%"
+>
+戻る
+</button>
 
 </div>
+
 
 </section>
+
 
 </main>
 
@@ -457,7 +549,7 @@ input{
 
 
 /* ==================================================
-   Firebase
+   Firebase設定
 ================================================== */
 
 const firebaseConfig = {
@@ -493,7 +585,7 @@ import {
   initializeApp
 }
 from
-  "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
 
 import {
@@ -509,7 +601,7 @@ import {
 
 }
 from
-  "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 
 import {
@@ -519,11 +611,11 @@ import {
 
 }
 from
-  "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
 /* ==================================================
-   基本
+   共通
 ================================================== */
 
 const $ = id =>
@@ -708,16 +800,16 @@ localStorage.setItem(
 ================================================== */
 
 let app;
+
 let db;
+
 let auth;
+
 let user;
 
 let roomId;
-let name;
 
-/*
-  ゲーム作成者かどうか
-*/
+let name;
 
 let isHost = false;
 
@@ -727,7 +819,7 @@ let answer = "";
 
 let unsub;
 
-let timerInterval;
+let timerInterval = null;
 
 let currentAnswerRound = null;
 
@@ -741,19 +833,6 @@ let answerSubmittedRound = null;
 ================================================== */
 
 async function init(){
-
-  if(
-    firebaseConfig.apiKey.startsWith("YOUR_")
-  ){
-
-    alert(
-      "Firebase設定が未入力です。"
-    );
-
-    return;
-
-  }
-
 
   if(!app){
 
@@ -771,7 +850,9 @@ async function init(){
       getAuth(app);
 
 
-    await signInAnonymously(auth);
+    await signInAnonymously(
+      auth
+    );
 
 
     user =
@@ -801,9 +882,13 @@ function show(id){
     "room",
     "editor"
   ]
-  .forEach(x =>
-    $(x).classList.add("hidden")
-  );
+  .forEach(x => {
+
+    $(x)
+      .classList
+      .add("hidden");
+
+  });
 
 
   $(id)
@@ -819,10 +904,12 @@ function show(id){
 
 function code(){
 
-  return Math.floor(
-    1000 +
-    Math.random() * 9000
-  ).toString();
+  return String(
+    Math.floor(
+      1000 +
+      Math.random() * 9000
+    )
+  );
 
 }
 
@@ -831,19 +918,20 @@ function code(){
    シャッフル
 ================================================== */
 
-function shuffle(a){
+function shuffle(array){
 
-  return a
+  return array
     .slice()
     .sort(
-      () => Math.random() - 0.5
+      () =>
+        Math.random() - 0.5
     );
 
 }
 
 
 /* ==================================================
-   エディタ
+   エディタ表示
 ================================================== */
 
 function renderEditor(){
@@ -855,7 +943,9 @@ function renderEditor(){
 
         <div class="list">
 
-          <span>${x}</span>
+          <span>
+            ${x}
+          </span>
 
           <button
             class="danger"
@@ -877,7 +967,9 @@ function renderEditor(){
 
         <div class="list">
 
-          <span>${x}</span>
+          <span>
+            ${x}
+          </span>
 
           <button
             class="danger"
@@ -896,36 +988,46 @@ function renderEditor(){
 
 window.delLine = i => {
 
-  if(lines.length > 1){
+  if(lines.length <= 1){
 
-    lines.splice(i,1);
-
-    localStorage.setItem(
-      "lines",
-      JSON.stringify(lines)
-    );
-
-    renderEditor();
+    return;
 
   }
+
+
+  lines.splice(i,1);
+
+
+  localStorage.setItem(
+    "lines",
+    JSON.stringify(lines)
+  );
+
+
+  renderEditor();
 
 };
 
 
 window.delExpr = i => {
 
-  if(exprs.length > 1){
+  if(exprs.length <= 1){
 
-    exprs.splice(i,1);
-
-    localStorage.setItem(
-      "exprs",
-      JSON.stringify(exprs)
-    );
-
-    renderEditor();
+    return;
 
   }
+
+
+  exprs.splice(i,1);
+
+
+  localStorage.setItem(
+    "exprs",
+    JSON.stringify(exprs)
+  );
+
+
+  renderEditor();
 
 };
 
@@ -948,52 +1050,64 @@ $("editorBack").onclick = () => {
 
 $("addLine").onclick = () => {
 
-  const v =
+  const value =
     $("newLine")
       .value
       .trim();
 
 
-  if(v){
+  if(!value){
 
-    lines.push(v);
-
-    localStorage.setItem(
-      "lines",
-      JSON.stringify(lines)
-    );
-
-    $("newLine").value = "";
-
-    renderEditor();
+    return;
 
   }
+
+
+  lines.push(value);
+
+
+  localStorage.setItem(
+    "lines",
+    JSON.stringify(lines)
+  );
+
+
+  $("newLine").value = "";
+
+
+  renderEditor();
 
 };
 
 
 $("addExpr").onclick = () => {
 
-  const v =
+  const value =
     $("newExpr")
       .value
       .trim();
 
 
-  if(v){
+  if(!value){
 
-    exprs.push(v);
-
-    localStorage.setItem(
-      "exprs",
-      JSON.stringify(exprs)
-    );
-
-    $("newExpr").value = "";
-
-    renderEditor();
+    return;
 
   }
+
+
+  exprs.push(value);
+
+
+  localStorage.setItem(
+    "exprs",
+    JSON.stringify(exprs)
+  );
+
+
+  $("newExpr").value = "";
+
+
+  renderEditor();
 
 };
 
@@ -1009,7 +1123,8 @@ function getPlayers(data){
   )
 
   .filter(
-    ([id,p]) => p.online
+    ([id,p]) =>
+      p.online
   )
 
   .sort(
@@ -1032,6 +1147,7 @@ async function enter(
 ){
 
   await init();
+
 
   roomId = id;
 
@@ -1075,13 +1191,6 @@ async function enter(
     .textContent = id;
 
 
-  $("hostControls")
-    .classList.toggle(
-      "hidden",
-      !host
-    );
-
-
   show("room");
 
 
@@ -1094,10 +1203,13 @@ async function enter(
         db,
         `rooms/${id}`
       ),
-      snap =>
+      snapshot => {
+
         sync(
-          snap.val() || {}
-        )
+          snapshot.val() || {}
+        );
+
+      }
     );
 
 }
@@ -1141,20 +1253,25 @@ function sync(data){
     rd.id || 0;
 
 
-  /* ================================================
+  /* ==================================================
      ゲーム開始前
-  ================================================ */
+  ================================================== */
 
   if(!round){
 
     $("promptCard")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
+
 
     $("answerCard")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
+
 
     $("resultCard")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
 
 
     $("roleTitle")
@@ -1167,12 +1284,9 @@ function sync(data){
         "ゲーム作成者が「次のお題を開始」を押してください。";
 
 
-    /*
-      開始前はゲーム作成者だけ
-    */
-
     $("hostControls")
-      .classList.toggle(
+      .classList
+      .toggle(
         "hidden",
         !isHost
       );
@@ -1183,31 +1297,41 @@ function sync(data){
   }
 
 
-  const currentA =
-    rd.aUid;
-
-
   const isA =
-    currentA === user.uid;
+    rd.aUid === user.uid;
 
 
-  /* ================================================
+  /* ==================================================
+     結果カードは基本的に非表示
+     
+     finished:trueになった時だけ
+     下で表示する
+  ================================================== */
+
+  if(!rd.finished){
+
+    $("resultCard")
+      .classList
+      .add("hidden");
+
+  }
+
+
+  /* ==================================================
      次のお題ボタン
-
-     ゲーム開始後は
-     現在の表現者だけ表示
-  ================================================ */
+  ================================================== */
 
   $("hostControls")
-    .classList.toggle(
+    .classList
+    .toggle(
       "hidden",
       !isA
     );
 
 
-  /* ================================================
-     新しいラウンド
-  ================================================ */
+  /* ==================================================
+     ラウンドが変わった時
+  ================================================== */
 
   if(
     currentAnswerRound !== rd.id
@@ -1218,9 +1342,9 @@ function sync(data){
   }
 
 
-  /* ================================================
+  /* ==================================================
      A
-  ================================================ */
+  ================================================== */
 
   if(isA){
 
@@ -1230,21 +1354,23 @@ function sync(data){
 
 
     $("promptCard")
-      .classList.remove("hidden");
+      .classList
+      .remove("hidden");
 
 
     $("answerCard")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
 
 
     $("line")
       .textContent =
-        rd.line;
+        rd.line || "";
 
 
     $("expr")
       .textContent =
-        rd.expr;
+        rd.expr || "";
 
 
     if(rd.performed){
@@ -1257,7 +1383,8 @@ function sync(data){
 
 
       $("performed")
-        .classList.add("done");
+        .classList
+        .add("done");
 
 
       $("performed")
@@ -1279,7 +1406,8 @@ function sync(data){
 
 
       $("performed")
-        .classList.remove("done");
+        .classList
+        .remove("done");
 
 
       $("performed")
@@ -1296,16 +1424,11 @@ function sync(data){
   }
 
 
-  /* ================================================
-     B（回答者）
-  ================================================ */
+  /* ==================================================
+     B
+  ================================================== */
 
   if(!isA){
-
-    /*
-      ★ここを追加
-      回答者はBと表示
-    */
 
     $("roleTitle")
       .textContent =
@@ -1313,8 +1436,13 @@ function sync(data){
 
 
     $("promptCard")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
 
+
+    /*
+      このラウンドですでに回答済みか
+    */
 
     const myAnswer =
       data.answers?.[user.uid];
@@ -1325,42 +1453,74 @@ function sync(data){
       myAnswer.roundId === rd.id;
 
 
-    if(
-      alreadyAnswered
-    ){
+    /* ----------------------------------------------
+       すでに回答済み
+       
+       ★ここでは正解・点数を表示しない
+    ---------------------------------------------- */
+
+    if(alreadyAnswered){
 
       answerSubmittedRound =
         rd.id;
 
 
-      $("answerCard")
-        .classList.add("hidden");
-
-
       stopTimer();
 
 
-      $("roomMessage")
-        .textContent =
-          `回答済み！ ${
-            myAnswer.points || 0
-          }点`;
+      $("answerCard")
+        .classList
+        .add("hidden");
+
+
+      /*
+        finishedになるまでは
+        待機メッセージだけ
+      */
+
+      if(!rd.finished){
+
+        $("roomMessage")
+          .textContent =
+            "回答を受け付けました。全員の回答を待っています。";
+
+      }
 
     }
 
+
+    /* ----------------------------------------------
+       ローカル上でも回答済み
+    ---------------------------------------------- */
 
     else if(
       answerSubmittedRound === rd.id
     ){
 
       $("answerCard")
-        .classList.add("hidden");
+        .classList
+        .add("hidden");
 
 
       stopTimer();
 
+
+      if(!rd.finished){
+
+        $("roomMessage")
+          .textContent =
+            "回答を受け付けました。全員の回答を待っています。";
+
+      }
+
     }
 
+
+    /* ----------------------------------------------
+       Aが表現済み
+       
+       まだ自分が回答していない
+    ---------------------------------------------- */
 
     else if(
       rd.performed &&
@@ -1375,34 +1535,43 @@ function sync(data){
 
 
       $("answerCard")
-        .classList.remove("hidden");
+        .classList
+        .remove("hidden");
 
 
       $("roomMessage")
         .textContent =
-        "Aの表現を見て回答してください。";
+          "Aの表現を見て回答してください。";
 
     }
 
 
+    /* ----------------------------------------------
+       Aがまだ表現していない
+    ---------------------------------------------- */
+
     else{
 
       $("answerCard")
-        .classList.add("hidden");
+        .classList
+        .add("hidden");
 
 
       $("roomMessage")
         .textContent =
-        "Aが表現するのを待っています。";
+          "Aが表現するのを待っています。";
 
     }
 
   }
 
 
-  /* ================================================
-     全員回答済み
-  ================================================ */
+  /* ==================================================
+     全員回答済み判定
+     
+     A本人がFirebase上の回答数を確認して
+     finished:trueにする
+  ================================================== */
 
   if(
     isA &&
@@ -1410,30 +1579,31 @@ function sync(data){
     !rd.finished
   ){
 
-    const answerCount =
-      Object.keys(
-        data.answers || {}
-      ).filter(
-        id =>
-          id !== currentA &&
-          data.answers[id]?.roundId === rd.id
-      ).length;
-
-
     const answerPlayers =
       players.filter(
         ([id]) =>
-          id !== currentA
+          id !== rd.aUid
       );
 
 
+    const answeredCount =
+      answerPlayers.filter(
+        ([id]) =>
+          data.answers?.[id]?.roundId === rd.id
+      ).length;
+
+
+    /*
+      A以外の全員が回答した場合のみ
+      finished:true
+    */
+
     if(
       answerPlayers.length > 0 &&
-      answerCount >=
-        answerPlayers.length
+      answeredCount >= answerPlayers.length
     ){
 
-      update(
+      await update(
         ref(
           db,
           `rooms/${roomId}/roundData`
@@ -1448,22 +1618,27 @@ function sync(data){
   }
 
 
-  /* ================================================
+  /* ==================================================
      ラウンド終了
-  ================================================ */
+     
+     ★ここで初めて結果を表示
+  ================================================== */
 
   if(rd.finished){
 
     $("promptCard")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
 
 
     $("answerCard")
-      .classList.add("hidden");
+      .classList
+      .add("hidden");
 
 
     $("resultCard")
-      .classList.remove("hidden");
+      .classList
+      .remove("hidden");
 
 
     stopTimer();
@@ -1473,12 +1648,13 @@ function sync(data){
 
 
     /*
-      現在の表現者だけ
-      次のお題を開始できる
+      次のお題を開始できるのは
+      今回のAだけ
     */
 
     $("hostControls")
-      .classList.toggle(
+      .classList
+      .toggle(
         "hidden",
         !isA
       );
@@ -1506,6 +1682,11 @@ function makeChoices(
 
   }
 
+
+  /*
+    すでに同じラウンドで
+    選択肢を作っている場合
+  */
 
   if(
     currentAnswerRound === roundId
@@ -1538,10 +1719,14 @@ function makeChoices(
   const wrongAnswers =
     shuffle(
       exprs.filter(
-        x => x !== correct
+        x =>
+          x !== correct
       )
     )
-    .slice(0,7);
+    .slice(
+      0,
+      7
+    );
 
 
   const choices =
@@ -1551,61 +1736,65 @@ function makeChoices(
     ]);
 
 
-  choices.forEach(x => {
+  choices.forEach(
+    x => {
 
-    const b =
-      document.createElement(
-        "button"
-      );
-
-
-    b.className =
-      "choice";
-
-
-    b.textContent =
-      x;
-
-
-    b.onclick = () => {
-
-      if(
-        answerSubmittedRound === roundId
-      ){
-
-        return;
-
-      }
-
-
-      document
-        .querySelectorAll(
-          "#choices .choice"
-        )
-        .forEach(q =>
-          q.classList
-            .remove("selected")
+      const button =
+        document.createElement(
+          "button"
         );
 
 
-      b.classList.add(
-        "selected"
-      );
+      button.className =
+        "choice";
 
 
-      answer = x;
+      button.textContent =
+        x;
 
 
-      $("sendAnswer")
-        .disabled = false;
+      button.onclick = () => {
 
-    };
+        if(
+          answerSubmittedRound === roundId
+        ){
+
+          return;
+
+        }
 
 
-    $("choices")
-      .appendChild(b);
+        document
+          .querySelectorAll(
+            "#choices .choice"
+          )
+          .forEach(
+            element =>
+              element
+                .classList
+                .remove("selected")
+          );
 
-  });
+
+        button
+          .classList
+          .add("selected");
+
+
+        answer = x;
+
+
+        $("sendAnswer")
+          .disabled = false;
+
+      };
+
+
+      $("choices")
+        .appendChild(button);
+
+    }
+  );
 
 
   startTimer(
@@ -1635,7 +1824,7 @@ function startTimer(
 
   function updateTimer(){
 
-    const seconds =
+    const elapsed =
       (
         Date.now() -
         startedAt
@@ -1644,7 +1833,7 @@ function startTimer(
 
     $("timer")
       .textContent =
-        seconds.toFixed(1) +
+        elapsed.toFixed(1) +
         "秒";
 
   }
@@ -1678,7 +1867,7 @@ function stopTimer(){
 
 
 /* ==================================================
-   得点
+   得点計算
 ================================================== */
 
 function calculateScore(
@@ -1720,7 +1909,7 @@ function calculateScore(
 
 
 /* ==================================================
-   結果
+   結果表示
 ================================================== */
 
 function renderResults(data){
@@ -1733,104 +1922,161 @@ function renderResults(data){
     data.answers || {};
 
 
-  const rows =
+  /*
+    今回の回答だけ取得
+  */
+
+  const currentAnswers =
     Object.entries(
       answers
     )
-
     .filter(
-      ([id,v]) =>
-        v.roundId === rd.id
-    )
-
-    .map(
-      ([id,v]) => {
-
-        const p =
-          data.players?.[id];
+      ([id,value]) =>
+        value.roundId === rd.id
+    );
 
 
-        if(!p){
+  /*
+    回答者ごとの結果
+  */
 
-          return "";
+  const answerRows =
+    currentAnswers
+      .map(
+        ([id,value]) => {
 
-        }
-
-
-        const correct =
-          v.answer === rd.expr;
-
-
-        const points =
-          v.points || 0;
+          const player =
+            data.players?.[id];
 
 
-        const elapsed =
-          v.elapsed || 0;
+          if(!player){
+
+            return "";
+
+          }
 
 
-        return `
-
-          <div class="rank">
-
-            <span>
-
-              ${p.name}
-
-              ${correct ? " ✅" : " ❌"}
-
-            </span>
+          const isCorrect =
+            value.answer === rd.expr;
 
 
-            <span>
+          const points =
+            value.points || 0;
+
+
+          const elapsed =
+            value.elapsed || 0;
+
+
+          return `
+
+            <div class="result-answer">
+
+              <div
+                style="
+                  display:flex;
+                  justify-content:space-between;
+                  gap:8px;
+                "
+              >
+
+                <strong>
+                  ${player.name}
+                </strong>
+
+                <strong>
+
+                  ${
+                    isCorrect
+                      ? "⭕ 正解"
+                      : "❌ 不正解"
+                  }
+
+                </strong>
+
+              </div>
+
+
+              <div
+                class="${
+                  isCorrect
+                    ? "correct"
+                    : "wrong"
+                }"
+                style="margin-top:6px"
+              >
+
+                回答：
+                ${value.answer || "回答なし"}
+
+              </div>
+
 
               ${
-                correct
-                  ? elapsed.toFixed(1) + "秒 / "
+                isCorrect
+                  ? `
+                    <div
+                      class="muted"
+                      style="margin-top:5px"
+                    >
+                      回答時間：
+                      ${elapsed.toFixed(1)}秒
+                    </div>
+                  `
                   : ""
               }
 
-              +${points}点
 
-            </span>
+              <div
+                style="margin-top:5px"
+              >
 
-          </div>
+                獲得：
+                <strong>
+                  ${points}点
+                </strong>
 
-        `;
+              </div>
 
-      }
-    )
-    .filter(Boolean)
-    .join("");
+            </div>
 
+          `;
+
+        }
+      )
+      .filter(Boolean)
+      .join("");
+
+
+  /*
+    累計ランキング
+  */
 
   const ranking =
     Object.entries(
       data.players || {}
     )
-
     .sort(
       (a,b) =>
         (b[1].score || 0) -
         (a[1].score || 0)
     )
-
     .map(
-      ([id,p],index) => `
+      ([id,player],index) => `
 
         <div class="rank">
 
           <span>
 
             ${index + 1}位　
-            ${p.name}
+            ${player.name}
 
           </span>
 
 
           <strong>
 
-            ${p.score || 0}点
+            ${player.score || 0}点
 
           </strong>
 
@@ -1846,18 +2092,42 @@ function renderResults(data){
     <div class="card">
 
       <div class="muted">
-        今回の正解
+        今回のお題
+      </div>
+
+
+      <div
+        style="
+          font-size:20px;
+          font-weight:700;
+          margin:8px 0 20px;
+        "
+      >
+
+        「${rd.line}」
+
+      </div>
+
+
+      <div class="muted">
+        正解
       </div>
 
 
       <div class="big">
+
         「${rd.expr}」
+
       </div>
 
 
       ${
-        rows ||
-        "<p>回答なし</p>"
+        answerRows ||
+        `
+          <p class="muted">
+            回答はありませんでした。
+          </p>
+        `
       }
 
     </div>
@@ -1865,7 +2135,9 @@ function renderResults(data){
 
     <div class="card">
 
-      <h2>🏆 現在の順位</h2>
+      <h2>
+        🏆 現在の順位
+      </h2>
 
       ${ranking}
 
@@ -1877,7 +2149,7 @@ function renderResults(data){
 
 
 /* ==================================================
-   ルーム作成
+   ゲーム作成
 ================================================== */
 
 $("create").onclick =
@@ -1885,7 +2157,7 @@ async () => {
 
   try{
 
-    const n =
+    const playerName =
       $("hostName")
         .value
         .trim() ||
@@ -1922,7 +2194,7 @@ async () => {
 
     await enter(
       id,
-      n,
+      playerName,
       true
     );
 
@@ -1943,7 +2215,7 @@ async () => {
 
 
 /* ==================================================
-   ルーム参加
+   ゲーム参加
 ================================================== */
 
 $("join").onclick =
@@ -1957,7 +2229,7 @@ async () => {
         .trim();
 
 
-    const n =
+    const playerName =
       $("joinName")
         .value
         .trim() ||
@@ -1969,7 +2241,7 @@ async () => {
     ){
 
       alert(
-        "4桁の参加コードを入力してください"
+        "4桁の参加コードを入力してください。"
       );
 
       return;
@@ -1979,7 +2251,7 @@ async () => {
 
     await enter(
       id,
-      n,
+      playerName,
       false
     );
 
@@ -2000,7 +2272,7 @@ async () => {
 
 
 /* ==================================================
-   次のお題
+   次のお題を開始
 ================================================== */
 
 $("startRound").onclick =
@@ -2011,7 +2283,7 @@ async () => {
     await init();
 
 
-    const snap =
+    const snapshot =
       await get(
         ref(
           db,
@@ -2021,7 +2293,7 @@ async () => {
 
 
     const data =
-      snap.val() || {};
+      snapshot.val() || {};
 
 
     const players =
@@ -2049,13 +2321,10 @@ async () => {
       currentRoundData.id || 0;
 
 
-    /*
-      最初のお題
-      → ゲーム作成者のみ
-
-      2ラウンド目以降
-      → 前ラウンドの表現者のみ
-    */
+    /* ----------------------------------------------
+       最初のお題
+       → ゲーム作成者のみ
+    ---------------------------------------------- */
 
     if(!currentRoundId){
 
@@ -2071,7 +2340,15 @@ async () => {
 
       }
 
-    }else{
+    }
+
+
+    /* ----------------------------------------------
+       2ラウンド目以降
+       → 前ラウンドのAのみ
+    ---------------------------------------------- */
+
+    else{
 
       if(
         currentRoundData.aUid !== user.uid
@@ -2101,15 +2378,23 @@ async () => {
     }
 
 
+    /*
+      次のラウンド番号
+    */
+
     const nextRound =
       (
-        currentRoundData
-          .roundNumber || 0
+        currentRoundData.roundNumber || 0
       ) + 1;
 
 
     /*
       Aを参加順で決定
+
+      1ラウンド目 → 1人目
+      2ラウンド目 → 2人目
+      3ラウンド目 → 3人目
+      ...
     */
 
     const aIndex =
@@ -2123,6 +2408,10 @@ async () => {
       players[aIndex][0];
 
 
+    /*
+      セリフ
+    */
+
     const line =
       lines[
         Math.floor(
@@ -2131,6 +2420,10 @@ async () => {
         )
       ];
 
+
+    /*
+      表現
+    */
 
     const expr =
       exprs[
@@ -2144,6 +2437,10 @@ async () => {
     const roundId =
       Date.now();
 
+
+    /*
+      ラウンド作成
+    */
 
     await update(
       ref(
@@ -2187,7 +2484,7 @@ async () => {
 
 
     /*
-      ローカルリセット
+      ローカル状態リセット
     */
 
     performedLocked = false;
@@ -2204,7 +2501,8 @@ async () => {
 
 
     $("performed")
-      .classList.remove("done");
+      .classList
+      .remove("done");
 
 
     $("performed")
@@ -2214,6 +2512,11 @@ async () => {
 
     $("sendAnswer")
       .disabled = true;
+
+
+    $("resultCard")
+      .classList
+      .add("hidden");
 
 
   }catch(error){
@@ -2232,7 +2535,7 @@ async () => {
 
 
 /* ==================================================
-   A：表現した
+   A：表現した！
 ================================================== */
 
 $("performed").onclick =
@@ -2255,7 +2558,8 @@ async () => {
 
 
     $("performed")
-      .classList.add("done");
+      .classList
+      .add("done");
 
 
     $("performed")
@@ -2263,7 +2567,7 @@ async () => {
         "表現済み";
 
 
-    const snap =
+    const snapshot =
       await get(
         ref(
           db,
@@ -2273,8 +2577,12 @@ async () => {
 
 
     const rd =
-      snap.val() || {};
+      snapshot.val() || {};
 
+
+    /*
+      すでに表現済み
+    */
 
     if(rd.performed){
 
@@ -2282,6 +2590,10 @@ async () => {
 
     }
 
+
+    /*
+      A本人か確認
+    */
 
     if(
       rd.aUid !== user.uid
@@ -2326,7 +2638,8 @@ async () => {
 
 
     $("performed")
-      .classList.remove("done");
+      .classList
+      .remove("done");
 
 
     $("performed")
@@ -2345,7 +2658,7 @@ async () => {
 
 
 /* ==================================================
-   回答
+   B：回答送信
 ================================================== */
 
 $("sendAnswer").onclick =
@@ -2368,7 +2681,7 @@ async () => {
       .disabled = true;
 
 
-    const snap =
+    const snapshot =
       await get(
         ref(
           db,
@@ -2378,7 +2691,7 @@ async () => {
 
 
     const data =
-      snap.val() || {};
+      snapshot.val() || {};
 
 
     const rd =
@@ -2402,18 +2715,18 @@ async () => {
         rd.id;
 
 
-      $("answerCard")
-        .classList.add("hidden");
-
-
       stopTimer();
+
+
+      $("answerCard")
+        .classList
+        .add("hidden");
 
 
       $("roomMessage")
         .textContent =
-          `回答済み！ ${
-            existingAnswer.points || 0
-          }点`;
+          "回答を受け付けました。全員の回答を待っています。";
+
 
       return;
 
@@ -2421,20 +2734,23 @@ async () => {
 
 
     /*
-      Aは回答不可
+      Aは回答できない
     */
 
     if(
       rd.aUid === user.uid
     ){
 
+      $("sendAnswer")
+        .disabled = true;
+
       return;
 
     }
 
 
     /*
-      表現前
+      Aがまだ表現していない
     */
 
     if(!rd.performed){
@@ -2480,7 +2796,9 @@ async () => {
 
 
     /*
-      回答保存
+      回答をFirebaseへ保存
+
+      ★ここでは結果を表示しない
     */
 
     await set(
@@ -2510,7 +2828,7 @@ async () => {
 
 
     /*
-      正解なら加点
+      正解なら累計点へ加算
     */
 
     if(points > 0){
@@ -2521,6 +2839,7 @@ async () => {
           `rooms/${roomId}/players/${user.uid}/score`
         ),
         current =>
+
           (current || 0) +
           points
       );
@@ -2529,7 +2848,7 @@ async () => {
 
 
     /*
-      回答済み
+      回答済みにする
     */
 
     answerSubmittedRound =
@@ -2539,13 +2858,23 @@ async () => {
     stopTimer();
 
 
-    $("answerCard")
-      .classList.add("hidden");
+    /*
+      回答選択肢を隠す
+    */
 
+    $("answerCard")
+      .classList
+      .add("hidden");
+
+
+    /*
+      ★重要
+      正解・点数はここでは表示しない
+    */
 
     $("roomMessage")
       .textContent =
-        `回答済み！ ${points}点`;
+        "回答を受け付けました。全員の回答を待っています。";
 
 
     answer = "";
@@ -2579,4 +2908,5 @@ init();
 </script>
 
 </body>
+
 </html>
