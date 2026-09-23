@@ -607,6 +607,10 @@ const $ = id =>
 
 const defaultLines = [
 
+  /* ------------------------------
+     元の50個
+  ------------------------------ */
+
   "好き",
   "ありがとう",
   "ごめん",
@@ -655,7 +659,63 @@ const defaultLines = [
   "許して",
   "もう一回言って",
   "わかった",
-  "無理かも"
+  "無理かも",
+
+
+  /* ------------------------------
+     追加50個
+  ------------------------------ */
+
+  "今日はいい天気だね",
+  "何食べようかな",
+  "ちょっと疲れたな",
+  "それ本当なの？",
+  "今から行くよ",
+  "待ってて",
+  "急いで！",
+  "そんなことないよ",
+  "どういう意味？",
+  "もう知らない",
+  "こっち見て",
+  "何かあった？",
+  "大丈夫だから",
+  "任せておいて",
+  "気をつけて",
+  "また明日",
+  "久しぶり",
+  "元気だった？",
+  "びっくりした",
+  "それは困る",
+  "しょうがないな",
+  "仕方ないよ",
+  "本当にありがとう",
+  "ごめんなさい",
+  "どうでもいい",
+  "それは嫌だ",
+  "それならいいよ",
+  "もちろん",
+  "たぶんね",
+  "絶対だよ",
+  "信じられない",
+  "何それ？",
+  "すごいね",
+  "さすがだね",
+  "もう終わり？",
+  "まだかな？",
+  "早く会いたい",
+  "また遊ぼう",
+  "一緒に行こう",
+  "ちょっとお願い",
+  "これ見て",
+  "聞いてほしい",
+  "内緒だからね",
+  "気にしないで",
+  "やめてよ",
+  "それは違う",
+  "どうかな？",
+  "なるほどね",
+  "そういうことか",
+  "今日は楽しかった"
 
 ];
 
@@ -665,6 +725,10 @@ const defaultLines = [
 ================================================== */
 
 const defaultExpr = [
+
+  /* ------------------------------
+     元の52個
+  ------------------------------ */
 
   "照れて",
   "怒って",
@@ -717,7 +781,62 @@ const defaultExpr = [
   "慌てて",
   "疑い深く",
   "オネェぽく",
-  "引き気味で"
+  "引き気味で",
+
+
+  /* ------------------------------
+     追加48個
+     ※既存52個と意味・用途が近いものを避ける
+  ------------------------------ */
+
+  "酔っ払ったように",
+  "酔いが完全に覚めたように",
+  "ロボットのように",
+  "AIのように機械的に",
+  "壊れた機械のように",
+  "ニュースキャスターのように",
+  "アナウンサーのように",
+  "ドラマの主人公のように",
+  "悪役のように",
+  "ヒーローのように",
+  "探偵のように",
+  "医者のように",
+  "店員のように",
+  "学校の先生のように",
+  "赤ちゃんのように",
+  "おじいちゃんのように",
+  "おばあちゃんのように",
+  "王様のように",
+  "執事のように",
+  "お嬢様のように",
+  "ギャルのように",
+  "武士のように",
+  "忍者のように",
+  "宇宙人のように",
+  "実況中継するように",
+  "オーディションを受けているように",
+  "カラオケで歌うように",
+  "ラップするように",
+  "ミュージカルのように",
+  "ナレーションのように",
+  "電話越しに話すように",
+  "留守番電話に吹き込むように",
+  "遠くの人に伝えるように",
+  "隣の人に聞かれないように",
+  "初対面の人に話すように",
+  "久しぶりに会った人に話すように",
+  "子どもに説明するように",
+  "外国人に身振り手振りで伝えるように",
+  "ジェスチャーを多用して",
+  "身振りだけで伝えようとして",
+  "口パクだけで伝えようとして",
+  "スローモーションのように",
+  "早送りされたように",
+  "一文字ずつ区切るように",
+  "語尾を毎回伸ばして",
+  "すべての言葉を疑問形にして",
+  "歌詞を読むように",
+  "CMのナレーションのように"
 
 ];
 
@@ -801,6 +920,16 @@ let currentAnswerRound = null;
 let performedLocked = false;
 
 let answerSubmittedRound = null;
+
+
+/*
+  現在、得点処理を行っているラウンド。
+
+  同じラウンドでsyncが何度発生しても
+  二重に得点を加算しないためのローカルロック。
+*/
+
+let settlingRoundId = null;
 
 
 /* ==================================================
@@ -1068,7 +1197,7 @@ $("addExpr").onclick = () => {
   }
 
 
-  exprs.push(value);
+  lines.push(value);
 
 
   localStorage.setItem(
@@ -1105,6 +1234,80 @@ function getPlayers(data){
     (a,b) =>
       (a[1].joinedAt || 0) -
       (b[1].joinedAt || 0)
+  );
+
+}
+
+
+/* ==================================================
+   ラウンド進行中に表示する得点
+================================================== */
+
+/*
+  回答時にはまだ累計得点を増やさない。
+
+  ただし、得点加算処理中にFirebaseから
+  score更新だけ先に届く場合があるため、
+  結果確定前は今回のラウンド分を差し引いて表示する。
+
+  これにより、
+
+  回答
+    ↓
+  待機
+    ↓
+  全員回答
+    ↓
+  得点加算
+    ↓
+  finished:true
+    ↓
+  結果表示
+
+  という流れを維持できる。
+*/
+
+function getDisplayScore(
+  player,
+  playerId,
+  data
+){
+
+  const actualScore =
+    player?.score || 0;
+
+
+  const rd =
+    data.roundData || {};
+
+
+  if(
+    rd.finished ||
+    !rd.id ||
+    !rd.scoresApplying
+  ){
+
+    return actualScore;
+
+  }
+
+
+  const roundAnswer =
+    data.answers?.[playerId];
+
+
+  const points =
+    roundAnswer &&
+    roundAnswer.roundId === rd.id
+      ? Number(
+          roundAnswer.points || 0
+        )
+      : 0;
+
+
+  return Math.max(
+    0,
+    actualScore - points
   );
 
 }
@@ -1230,14 +1433,163 @@ async function enter(
 
 
 /* ==================================================
-   ゲーム同期
+   得点をラウンド終了時に加算
 ================================================== */
 
-/*
-  ★重要
-  sync内でawait update()を使用するため
-  asyncが必要
-*/
+async function applyRoundScores(
+  data,
+  rd
+){
+
+  if(
+    !rd.id ||
+    rd.finished
+  ){
+
+    return;
+
+  }
+
+
+  /*
+    すでに別の処理がこのラウンドを
+    処理中なら何もしない
+  */
+
+  if(
+    settlingRoundId === rd.id
+  ){
+
+    return;
+
+  }
+
+
+  /*
+    Firebase上ですでに得点処理済みなら
+    二重加算しない
+  */
+
+  if(
+    rd.scoresApplied
+  ){
+
+    return;
+
+  }
+
+
+  settlingRoundId =
+    rd.id;
+
+
+  try{
+
+    const answers =
+      data.answers || {};
+
+
+    /*
+      A以外の今回の回答を確認
+    */
+
+    const currentAnswers =
+      Object.entries(
+        answers
+      )
+      .filter(
+        ([id,value]) =>
+          value &&
+          value.roundId === rd.id &&
+          id !== rd.aUid
+      );
+
+
+    /*
+      各回答者の得点を加算。
+
+      ここまでの段階では
+      roundData.finished は false のまま。
+
+      そのため結果画面は表示されない。
+    */
+
+    for(
+      const [playerId,value]
+      of currentAnswers
+    ){
+
+      const points =
+        Number(
+          value.points || 0
+        );
+
+
+      if(points <= 0){
+
+        continue;
+
+      }
+
+
+      await runTransaction(
+        ref(
+          db,
+          `rooms/${roomId}/players/${playerId}/score`
+        ),
+        current =>
+
+          (current || 0) +
+          points
+      );
+
+    }
+
+
+    /*
+      全員分の得点加算が完了したあとで
+      はじめて結果確定。
+
+      scoresApplying:true を記録することで
+      得点処理済みであることも保存する。
+    */
+
+    await update(
+      ref(
+        db,
+        `rooms/${roomId}/roundData`
+      ),
+      {
+
+        scoresApplied:
+          true,
+
+        finished:
+          true
+
+      }
+    );
+
+
+  }catch(error){
+
+    console.error(
+      "得点処理エラー:",
+      error
+    );
+
+  }finally{
+
+    settlingRoundId = null;
+
+  }
+
+}
+
+
+/* ==================================================
+   ゲーム同期
+================================================== */
 
 async function sync(data){
 
@@ -1252,6 +1604,14 @@ async function sync(data){
     getPlayers(data);
 
 
+  const rd =
+    data.roundData || {};
+
+
+  /*
+    結果確定前の表示用得点を計算
+  */
+
   $("players")
     .textContent =
       "参加者：" +
@@ -1260,7 +1620,7 @@ async function sync(data){
           ? players
               .map(
                 ([id,p]) =>
-                  `${p.name} (${p.score || 0}点)`
+                  `${p.name} (${getDisplayScore(p,id,data)}点)`
               )
               .join("、")
           : "なし"
@@ -1273,11 +1633,11 @@ async function sync(data){
 
   $("myScore")
     .textContent =
-      myPlayer?.score || 0;
-
-
-  const rd =
-    data.roundData || {};
+      getDisplayScore(
+        myPlayer,
+        user.uid,
+        data
+      );
 
 
   round =
@@ -1314,6 +1674,11 @@ async function sync(data){
       .textContent =
         "ゲーム作成者が「次のお題を開始」を押してください。";
 
+
+    /*
+      ゲーム開始前だけ
+      ホストにボタンを表示
+    */
 
     $("hostControls")
       .classList
@@ -1352,6 +1717,16 @@ async function sync(data){
   if(!rd.finished){
 
     $("resultCard")
+      .classList
+      .add("hidden");
+
+
+    /*
+      ラウンド進行中は
+      「次のお題を開始」を全員に非表示
+    */
+
+    $("hostControls")
       .classList
       .add("hidden");
 
@@ -1578,7 +1953,9 @@ async function sync(data){
   if(
     isA &&
     rd.performed &&
-    !rd.finished
+    !rd.finished &&
+    !rd.scoresApplied &&
+    settlingRoundId !== rd.id
   ){
 
     const answerPlayers =
@@ -1609,14 +1986,17 @@ async function sync(data){
       answeredCount === answerPlayers.length
     ){
 
-      await update(
-        ref(
-          db,
-          `rooms/${roomId}/roundData`
-        ),
-        {
-          finished:true
-        }
+      /*
+        得点加算が完了するまで
+        finished:trueにはしない。
+
+        そのため、この時点では
+        結果は表示されない。
+      */
+
+      await applyRoundScores(
+        data,
+        rd
       );
 
     }
@@ -1653,7 +2033,12 @@ async function sync(data){
 
     /*
       次のお題を開始できるのは
-      今回のAだけ
+      今回のラウンドでAだった人だけ。
+
+      次のラウンドが開始されると
+      rd.finished:falseになるため、
+      上記の「ラウンド進行中」で
+      自動的に非表示になる。
     */
 
     $("hostControls")
@@ -2349,6 +2734,11 @@ async () => {
 
     else{
 
+      /*
+        次のお題を開始できるのは
+        前ラウンドのAだけ
+      */
+
       if(
         currentRoundData.aUid !== user.uid
       ){
@@ -2430,6 +2820,11 @@ async () => {
 
     /*
       新しいラウンド
+
+      finished:falseなので、
+      前ラウンドのAだった人に
+      表示されていた「次のお題を開始」は
+      即座に消える。
     */
 
     await update(
@@ -2463,6 +2858,9 @@ async () => {
             0,
 
           finished:
+            false,
+
+          scoresApplied:
             false
 
         },
@@ -2485,6 +2883,8 @@ async () => {
 
     answer = "";
 
+    settlingRoundId = null;
+
 
     $("performed")
       .disabled = false;
@@ -2505,6 +2905,16 @@ async () => {
 
 
     $("resultCard")
+      .classList
+      .add("hidden");
+
+
+    /*
+      次のお題開始直後は
+      ボタンを明示的に非表示
+    */
+
+    $("hostControls")
       .classList
       .add("hidden");
 
@@ -2797,6 +3207,9 @@ async () => {
 
     /*
       得点
+
+      ★重要
+      ここでは累計scoreを変更しない。
     */
 
     const points =
@@ -2808,6 +3221,9 @@ async () => {
 
     /*
       回答を保存
+
+      pointsは今回のラウンドで
+      獲得する予定の点数として保存する。
     */
 
     await set(
@@ -2830,30 +3246,22 @@ async () => {
           elapsed,
 
         points:
-          points
+          points,
+
+        answeredAt:
+          Date.now()
 
       }
     );
 
 
     /*
-      正解なら累計点を加算
+      ★ここでは累計scoreを加算しない。
+
+      全員回答後、
+      Aがラウンドを確定するときに
+      applyRoundScores()で加算する。
     */
-
-    if(points > 0){
-
-      await runTransaction(
-        ref(
-          db,
-          `rooms/${roomId}/players/${user.uid}/score`
-        ),
-        current =>
-
-          (current || 0) +
-          points
-      );
-
-    }
 
 
     /*
