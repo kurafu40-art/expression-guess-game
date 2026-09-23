@@ -387,6 +387,15 @@ Aだけ見る
 表現した！
 </button>
 
+
+<button
+  id="skipRound"
+  class="danger"
+  style="width:100%;margin-top:8px"
+>
+このお題をスキップ
+</button>
+
 </div>
 
 
@@ -534,7 +543,7 @@ Aはどんな表現をしていましたか？
 const firebaseConfig = {
 
   apiKey:
-    "AIzaSyBL-GvVZv7trLemQ5yqH5DumobwFyx-Yu8",
+    "AIzaSyBL-GvVZv7trqH5DumobwFyx-Yu8",
 
   authDomain:
     "expression-guess-game.firebaseapp.com",
@@ -607,10 +616,6 @@ const $ = id =>
 
 const defaultLines = [
 
-  /* ------------------------------
-     元の50個
-  ------------------------------ */
-
   "好き",
   "ありがとう",
   "ごめん",
@@ -660,11 +665,6 @@ const defaultLines = [
   "もう一回言って",
   "わかった",
   "無理かも",
-
-
-  /* ------------------------------
-     追加50個
-  ------------------------------ */
 
   "今日はいい天気だね",
   "何食べようかな",
@@ -726,65 +726,37 @@ const defaultLines = [
 
 const defaultExpr = [
 
-  /* ------------------------------
-     元の表現
-  ------------------------------ */
-
   "照れて",
   "怒って",
-
-  /*
-    似通った表現を整理
-  */
   "ふてくされて",
-
   "舞い上がって",
-
   "カッコつけて",
-
   "よそよそしく",
-
   "疑って",
-
   "声を震わせて",
-
   "驚いて",
-
   "冷たく",
   "優しく",
-
   "せかすように",
-
   "困って",
-
   "鼻で笑うように",
-
   "不安そうに",
   "真剣に",
   "眠そうに",
   "呆れて",
   "甘えるように",
   "大げさに",
-
   "身構えて",
-
   "怯えて",
-
   "楽しそうに",
-
   "無関心そうに",
-
   "嫌そうに",
   "悔しそうに",
   "嫉妬して",
   "心配そうに",
-
   "皮肉っぽく",
-
   "おどおどして",
-
   "投げやりに",
-
   "笑いをこらえて",
   "笑いながら",
   "泣きながら",
@@ -794,28 +766,18 @@ const defaultExpr = [
   "ひそひそ声で",
   "大声で",
   "小声で",
-
   "遠い目をして",
-
   "無表情で",
   "芝居がかった感じで",
   "子供っぽく",
   "偉そうに",
-
   "ぶっきらぼうに",
-
   "恐縮したように",
-
   "冷静に",
   "慌てて",
   "警戒するように",
   "オネェぽく",
   "引き気味で",
-
-
-  /* ------------------------------
-     追加48個
-  ------------------------------ */
 
   "酔っ払ったように",
   "酔いが完全に覚めたように",
@@ -872,18 +834,6 @@ const defaultExpr = [
 /* ==================================================
    以前の表現から新しい表現への移行
 ================================================== */
-
-/*
-  以前のバージョンをすでに使用している場合、
-  LocalStorageには古い表現が残っています。
-
-  そのままだと、
-  新しいdefaultExprに変更しても
-  古い表現が画面に残ってしまいます。
-
-  そのため、以前の似通った表現を
-  新しい表現へ自動的に置き換えます。
-*/
 
 const expressionReplacements = {
 
@@ -951,10 +901,6 @@ let savedExprs =
   );
 
 
-/*
-  以前保存されていた表現を移行
-*/
-
 if(
   Array.isArray(savedExprs)
 ){
@@ -970,13 +916,6 @@ if(
 }
 
 
-/*
-  セリフ
-
-  既存のユーザー追加分は維持し、
-  デフォルトに存在するものを追加。
-*/
-
 let lines = savedLines
   ? [
       ...new Set([
@@ -986,15 +925,6 @@ let lines = savedLines
     ]
   : [...defaultLines];
 
-
-/*
-  表現
-
-  既存のユーザー追加分を維持しながら
-  古い類似表現を新しい表現へ移行。
-
-  Setで重複も除去。
-*/
 
 let exprs = savedExprs
   ? [
@@ -1049,15 +979,6 @@ let currentAnswerRound = null;
 let performedLocked = false;
 
 let answerSubmittedRound = null;
-
-
-/*
-  現在、得点処理を行っているラウンド。
-
-  同じラウンドでsyncが何度発生しても
-  同じブラウザから何度も得点処理を
-  開始しないためのローカルロック。
-*/
 
 let settlingRoundId = null;
 
@@ -1331,19 +1252,6 @@ $("addExpr").onclick = () => {
   }
 
 
-  /*
-    ★修正
-
-    以前はここが
-
-      lines.push(value)
-
-    になっていたため、
-    表現を追加するとセリフ側に追加されていた。
-
-    正しくはexprsへ追加。
-  */
-
   if(
     !exprs.includes(value)
   ){
@@ -1412,12 +1320,6 @@ function getDisplayScore(
     data.roundData || {};
 
 
-  /*
-    結果確定後は、
-    Firebaseに保存されている
-    実際の累計得点を表示。
-  */
-
   if(
     rd.finished ||
     !rd.id
@@ -1427,10 +1329,6 @@ function getDisplayScore(
 
   }
 
-
-  /*
-    今回のラウンドで獲得した予定ポイント
-  */
 
   const roundAnswer =
     data.answers?.[playerId];
@@ -1444,24 +1342,6 @@ function getDisplayScore(
         )
       : 0;
 
-
-  /*
-    得点加算処理が先にFirebaseへ反映された場合でも、
-    結果表示前なら今回分を差し引いて表示する。
-
-    例：
-
-      前回まで 500点
-      今回     150点
-
-      Firebase上
-      650点
-
-      ↓ 結果表示前
-
-      画面
-      500点
-  */
 
   return Math.max(
     0,
@@ -1493,11 +1373,6 @@ async function enter(
     );
 
 
-  /*
-    参加の場合、
-    存在しないルームには入れない
-  */
-
   if(
     !host &&
     !roomSnapshot.exists()
@@ -1524,11 +1399,6 @@ async function enter(
     );
 
 
-  /*
-    既存プレイヤーなら
-    得点を0に戻さない
-  */
-
   const existingPlayer =
     roomSnapshot.val()
       ?.players?.[user.uid];
@@ -1549,10 +1419,6 @@ async function enter(
       score:
         existingPlayer?.score ||
         0,
-
-      /*
-        これまでの得点加算履歴も維持する。
-      */
 
       scoreRounds:
         existingPlayer?.scoreRounds ||
@@ -1617,11 +1483,6 @@ async function applyRoundScores(
   }
 
 
-  /*
-    このブラウザですでに
-    このラウンドを処理中なら何もしない。
-  */
-
   if(
     settlingRoundId === rd.id
   ){
@@ -1630,11 +1491,6 @@ async function applyRoundScores(
 
   }
 
-
-  /*
-    Firebase上ですでに
-    ラウンド終了処理済みなら何もしない。
-  */
 
   if(
     rd.scoresApplied
@@ -1645,10 +1501,6 @@ async function applyRoundScores(
   }
 
 
-  /*
-    このブラウザでの処理をロック。
-  */
-
   settlingRoundId =
     rd.id;
 
@@ -1658,10 +1510,6 @@ async function applyRoundScores(
     const answers =
       data.answers || {};
 
-
-    /*
-      A以外の今回の回答だけ取得。
-    */
 
     const currentAnswers =
       Object.entries(
@@ -1675,11 +1523,6 @@ async function applyRoundScores(
       );
 
 
-    /*
-      各プレイヤーについて
-      今回のポイントを加算。
-    */
-
     for(
       const [playerId, value]
       of currentAnswers
@@ -1690,10 +1533,6 @@ async function applyRoundScores(
           value.points || 0
         );
 
-
-      /*
-        0点なら加算不要。
-      */
 
       if(points <= 0){
 
@@ -1709,21 +1548,9 @@ async function applyRoundScores(
         );
 
 
-      /*
-        プレイヤー全体を
-        Firebase Transactionで処理する。
-
-        scoreとscoreRoundsを
-        同じトランザクションで更新する。
-      */
-
       await runTransaction(
         playerRef,
         currentPlayer => {
-
-          /*
-            プレイヤーが存在しない場合。
-          */
 
           if(!currentPlayer){
 
@@ -1742,17 +1569,6 @@ async function applyRoundScores(
             );
 
 
-          /*
-            ★最重要
-
-            すでにこのラウンドのポイントが
-            加算済みなら何もしない。
-
-            Firebase Transactionは、
-            同じ処理が複数回走ったとしても
-            この判定によって二重加算を防止する。
-          */
-
           if(
             Object.prototype.hasOwnProperty.call(
               scoreRounds,
@@ -1770,10 +1586,6 @@ async function applyRoundScores(
               currentPlayer.score || 0
             );
 
-
-          /*
-            今回分を1回だけ加算。
-          */
 
           return {
 
@@ -1798,17 +1610,6 @@ async function applyRoundScores(
 
     }
 
-
-    /*
-      ★ここが重要
-
-      全員分のポイント加算が完了してから
-      finished:trueにする。
-
-      そのため、
-      結果画面が表示された時点では
-      累計ポイントも確定済み。
-    */
 
     await update(
       ref(
@@ -1864,10 +1665,6 @@ async function sync(data){
     data.roundData || {};
 
 
-  /*
-    結果確定前の表示用得点を計算。
-  */
-
   $("players")
     .textContent =
       "参加者：" +
@@ -1921,6 +1718,11 @@ async function sync(data){
       .add("hidden");
 
 
+    $("skipRound")
+      .classList
+      .add("hidden");
+
+
     $("roleTitle")
       .textContent =
         "ゲーム開始待ち";
@@ -1930,11 +1732,6 @@ async function sync(data){
       .textContent =
         "ゲーム作成者が「次のお題を開始」を押してください。";
 
-
-    /*
-      ゲーム開始前だけ
-      ホストにボタンを表示。
-    */
 
     $("hostControls")
       .classList
@@ -1967,7 +1764,7 @@ async function sync(data){
 
 
   /* ==================================================
-     まだ終了していない
+     ラウンド進行中
   ================================================== */
 
   if(!rd.finished){
@@ -1976,11 +1773,6 @@ async function sync(data){
       .classList
       .add("hidden");
 
-
-    /*
-      ラウンド進行中は
-      「次のお題を開始」を全員に非表示。
-    */
 
     $("hostControls")
       .classList
@@ -2018,6 +1810,32 @@ async function sync(data){
     $("expr")
       .textContent =
         rd.expr || "";
+
+
+    /*
+      スキップ済み・終了済みなら
+      Aの操作ボタンを無効化。
+    */
+
+    if(
+      rd.finished ||
+      rd.skipped
+    ){
+
+      $("skipRound")
+        .classList
+        .add("hidden");
+
+    }else{
+
+      $("skipRound")
+        .classList
+        .remove("hidden");
+
+      $("skipRound")
+        .disabled = false;
+
+    }
 
 
     if(rd.performed){
@@ -2085,6 +1903,11 @@ async function sync(data){
 
 
     $("promptCard")
+      .classList
+      .add("hidden");
+
+
+    $("skipRound")
       .classList
       .add("hidden");
 
@@ -2210,6 +2033,7 @@ async function sync(data){
     isA &&
     rd.performed &&
     !rd.finished &&
+    !rd.skipped &&
     !rd.scoresApplied &&
     settlingRoundId !== rd.id
   ){
@@ -2221,11 +2045,6 @@ async function sync(data){
       );
 
 
-    /*
-      A以外のプレイヤーのうち、
-      今回のroundIdで回答済みの人数。
-    */
-
     const answeredCount =
       answerPlayers.filter(
         ([id]) =>
@@ -2233,22 +2052,10 @@ async function sync(data){
       ).length;
 
 
-    /*
-      A以外の全員が回答した場合。
-    */
-
     if(
       answerPlayers.length > 0 &&
       answeredCount === answerPlayers.length
     ){
-
-      /*
-        得点加算が完了するまで
-        finished:trueにはしない。
-
-        そのため、
-        この時点では結果画面は表示されない。
-      */
 
       await applyRoundScores(
         data,
@@ -2276,6 +2083,11 @@ async function sync(data){
       .add("hidden");
 
 
+    $("skipRound")
+      .classList
+      .add("hidden");
+
+
     $("resultCard")
       .classList
       .remove("hidden");
@@ -2284,19 +2096,104 @@ async function sync(data){
     stopTimer();
 
 
-    renderResults(data);
+    /*
+      スキップされた場合
+    */
+
+    if(rd.skipped){
+
+      $("result").innerHTML = `
+
+        <div class="card center">
+
+          <div
+            style="
+              font-size:42px;
+              margin-bottom:10px;
+            "
+          >
+            ⏭️
+          </div>
+
+          <h2>
+            このお題はスキップされました
+          </h2>
+
+          <p class="muted">
+            Aがお題をスキップしました。
+          </p>
+
+          <div
+            style="
+              margin-top:18px;
+              font-size:18px;
+              font-weight:700;
+            "
+          >
+            今回はポイントは入りません。
+          </div>
+
+        </div>
+
+      `;
+
+    }else{
+
+      renderResults(data);
+
+    }
 
 
     /*
-      次のお題を開始できるのは
-      今回のラウンドでAだった人だけ。
+      次のお題を開始できる人を決定。
+
+      通常：
+      今回のA
+
+      スキップ：
+      今回のAの次のプレイヤー
     */
+
+    let nextStarterUid = null;
+
+
+    if(rd.skipped){
+
+      const currentAIndex =
+        players.findIndex(
+          ([id]) =>
+            id === rd.aUid
+        );
+
+
+      if(
+        currentAIndex >= 0 &&
+        players.length > 1
+      ){
+
+        nextStarterUid =
+          players[
+            (
+              currentAIndex + 1
+            ) %
+            players.length
+          ][0];
+
+      }
+
+    }else{
+
+      nextStarterUid =
+        rd.aUid;
+
+    }
+
 
     $("hostControls")
       .classList
       .toggle(
         "hidden",
-        !isA
+        user.uid !== nextStarterUid
       );
 
   }
@@ -2680,12 +2577,6 @@ function renderResults(data){
       .join("");
 
 
-  /*
-    結果表示時点では、
-    Firebase側のscoreがすでに
-    今回分を含んでいる。
-  */
-
   const ranking =
     Object.entries(
       data.players || {}
@@ -3000,17 +2891,65 @@ async () => {
     else{
 
       /*
-        次のお題を開始できるのは
-        前ラウンドのAだけ。
+        通常終了：
+        前ラウンドのAが開始
+
+        スキップ：
+        前ラウンドのAの次のプレイヤーが開始
       */
 
+      let allowedStarterUid =
+        currentRoundData.aUid;
+
+
       if(
-        currentRoundData.aUid !== user.uid
+        currentRoundData.skipped
       ){
 
-        alert(
-          "次のお題を開始できるのは、そのラウンドの表現者だけです。"
-        );
+        const currentAIndex =
+          players.findIndex(
+            ([id]) =>
+              id === currentRoundData.aUid
+          );
+
+
+        if(
+          currentAIndex >= 0 &&
+          players.length > 1
+        ){
+
+          allowedStarterUid =
+            players[
+              (
+                currentAIndex + 1
+              ) %
+              players.length
+            ][0];
+
+        }
+
+      }
+
+
+      if(
+        allowedStarterUid !== user.uid
+      ){
+
+        if(
+          currentRoundData.skipped
+        ){
+
+          alert(
+            "次のお題を開始できるのは、次の表現者です。"
+          );
+
+        }else{
+
+          alert(
+            "次のお題を開始できるのは、そのラウンドの表現者だけです。"
+          );
+
+        }
 
         return;
 
@@ -3022,7 +2961,7 @@ async () => {
       ){
 
         alert(
-          "全員の回答が終わってから次のお題を開始してください。"
+          "ラウンドが終了してから次のお題を開始してください。"
         );
 
         return;
@@ -3040,17 +2979,69 @@ async () => {
 
     /*
       Aを参加順で決定。
+
+      最初：
+      参加順1番目
+
+      通常：
+      前回Aの次
+
+      スキップ：
+      スキップしたAの次の人が
+      次ラウンドの開始者となり、
+      そのさらに次の人がAになる。
     */
 
-    const aIndex =
-      (
-        nextRound - 1
-      ) %
-      players.length;
+    let aUid;
 
 
-    const aUid =
-      players[aIndex][0];
+    const currentAIndex =
+      players.findIndex(
+        ([id]) =>
+          id === currentRoundData.aUid
+      );
+
+
+    if(nextRound === 1){
+
+      aUid =
+        players[0][0];
+
+    }else{
+
+      /*
+        前ラウンドのAの次の人
+      */
+
+      if(
+        currentAIndex >= 0
+      ){
+
+        const nextIndex =
+          (
+            currentAIndex + 1
+          ) %
+          players.length;
+
+
+        aUid =
+          players[nextIndex][0];
+
+      }else{
+
+        const fallbackIndex =
+          (
+            nextRound - 1
+          ) %
+          players.length;
+
+
+        aUid =
+          players[fallbackIndex][0];
+
+      }
+
+    }
 
 
     /*
@@ -3089,12 +3080,6 @@ async () => {
 
     /*
       新しいラウンド
-
-      finished:falseなので、
-      前ラウンドのAだった人に
-      表示されていた
-      「次のお題を開始」は
-      即座に消える。
     */
 
     await update(
@@ -3131,6 +3116,9 @@ async () => {
             false,
 
           scoresApplied:
+            false,
+
+          skipped:
             false
 
         },
@@ -3170,6 +3158,10 @@ async () => {
       "表現した！";
 
 
+    $("skipRound")
+      .disabled = false;
+
+
     $("sendAnswer")
       .disabled = true;
 
@@ -3178,11 +3170,6 @@ async () => {
       .classList
       .add("hidden");
 
-
-    /*
-      次のお題開始直後は
-      ボタンを明示的に非表示。
-    */
 
     $("hostControls")
       .classList
@@ -3250,20 +3237,12 @@ async () => {
       snapshot.val() || {};
 
 
-    /*
-      すでに表現済み
-    */
-
     if(rd.performed){
 
       return;
 
     }
 
-
-    /*
-      A本人か確認
-    */
 
     if(
       rd.aUid !== user.uid
@@ -3284,6 +3263,16 @@ async () => {
       $("performed")
         .textContent =
         "表現した！";
+
+      return;
+
+    }
+
+
+    if(
+      rd.finished ||
+      rd.skipped
+    ){
 
       return;
 
@@ -3344,6 +3333,129 @@ async () => {
 
 
 /* ==================================================
+   A：お題をスキップ
+================================================== */
+
+$("skipRound").onclick =
+async () => {
+
+  try{
+
+    $("skipRound")
+      .disabled = true;
+
+
+    const snapshot =
+      await get(
+        ref(
+          db,
+          `rooms/${roomId}/roundData`
+        )
+      );
+
+
+    const rd =
+      snapshot.val() || {};
+
+
+    /*
+      A本人か確認
+    */
+
+    if(
+      rd.aUid !== user.uid
+    ){
+
+      $("skipRound")
+        .disabled = false;
+
+      return;
+
+    }
+
+
+    /*
+      すでに終了している場合
+    */
+
+    if(
+      rd.finished ||
+      rd.skipped
+    ){
+
+      return;
+
+    }
+
+
+    /*
+      スキップを確定。
+
+      performed済みかどうかに関係なく
+      スキップ可能。
+    */
+
+    await update(
+      ref(
+        db,
+        `rooms/${roomId}/roundData`
+      ),
+      {
+
+        skipped:
+          true,
+
+        finished:
+          true,
+
+        scoresApplied:
+          true
+
+      }
+    );
+
+
+    /*
+      Aの操作をロック
+    */
+
+    performedLocked = true;
+
+
+    $("performed")
+      .disabled = true;
+
+
+    $("skipRound")
+      .disabled = true;
+
+
+    stopTimer();
+
+
+  }catch(error){
+
+    console.error(
+      "スキップ処理エラー:",
+      error
+    );
+
+
+    $("skipRound")
+      .disabled = false;
+
+
+    alert(
+      "お題をスキップできませんでした。\n\n" +
+      error.message
+    );
+
+  }
+
+};
+
+
+/* ==================================================
    B：回答送信
 ================================================== */
 
@@ -3385,7 +3497,8 @@ async () => {
     */
 
     if(
-      rd.finished
+      rd.finished ||
+      rd.skipped
     ){
 
       return;
@@ -3479,9 +3592,7 @@ async () => {
 
 
     /*
-      今回の得点。
-
-      ★ここでは累計scoreを変更しない。
+      今回の得点
     */
 
     const points =
@@ -3492,10 +3603,7 @@ async () => {
 
 
     /*
-      回答を保存。
-
-      pointsは今回のラウンドで
-      獲得する予定の点数。
+      回答保存
     */
 
     await set(
@@ -3528,16 +3636,8 @@ async () => {
 
 
     /*
-      ★重要
-
-      ここでは累計scoreを
-      一切変更しない。
-
-      全員回答後にAが
-      applyRoundScores()を実行し、
-      そこで初めて累計scoreへ反映する。
+      累計scoreはここでは変更しない。
     */
-
 
     answerSubmittedRound =
       rd.id;
@@ -3550,10 +3650,6 @@ async () => {
       .classList
       .add("hidden");
 
-
-    /*
-      ★ここでは結果を表示しない。
-    */
 
     $("roomMessage")
       .textContent =
